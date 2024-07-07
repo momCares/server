@@ -4,4 +4,6 @@ const findOne = async (req, res, next) => {};
 
 const updateStatus = async (req, res, next) => {};
 
-module.exports = { findAll, findOne, updateStatus };
+const payment = async (req, res, next) => {};
+
+module.exports = { findAll, findOne, updateStatus, payment };
