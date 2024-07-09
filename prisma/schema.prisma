@@ -174,15 +174,7 @@ model Category {
   updated_at DateTime @updatedAt
 }
 
-model Product_Category {
-  id    Int     @id @default(autoincrement())
-  product_id Int
-  product Product    @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  category_id Int
-  category Category    @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
+
 
 model Promo {
   id    Int     @id @default(autoincrement())
@@ -215,19 +207,6 @@ model Product_Image {
   product_id Int
   product Product    @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   url String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
-
-model Store {
-  id    Int     @id @default(autoincrement())
-  title String
-  bank_name String
-  bank_account String
-  description String @db.Text
-  zip_code Int
-  province_id Int
-  city_id Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
