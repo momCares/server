@@ -17,7 +17,7 @@ const login = async (req, res, next) => {
       const { user, token } = await authService.login(req.body);
       res.json({ user, token });
     } catch (error) {
-        next(err)
+        next(error)
     }
   }
 
