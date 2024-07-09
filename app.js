@@ -14,6 +14,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 
+// Router
+app.use("/user", require("./routes/userRoutes"));
+
 app.use(router);
 app.use(errorHandler);
 

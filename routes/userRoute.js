@@ -2,7 +2,10 @@ const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
 
-router.get("/", userController.findOne);
-router.put("/", userController.update);
+// Endpoint untuk mencari satu pengguna berdasarkan ID
+router.get("/:id", userController.findOne);
+
+// Endpoint untuk mengupdate pengguna berdasarkan ID
+router.put("/:id", userController.update);
 
 module.exports = router;
