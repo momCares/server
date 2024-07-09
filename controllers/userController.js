@@ -1,35 +1,22 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const userService = require("../services/userService");
+const errorHandler = require("../middlewares/errorHandler");
 
-const update = async (req, res, next) => {
-  const { id } = req.params; // Ambil ID dari parameter URL
-  const { data } = req.body; // Ambil data yang akan diupdate dari body request
-
+const updateUser = async (req, res, next) => {
   try {
-    const updatedItem = await prisma.item.update({
-      where: { id: parseInt(id, 10) },
-      data,
-    });
-    res.status(200).json(updatedItem);
+    const user = await userService.updateUser(req.params.id, req.body);
+    res.json(user);
   } catch (error) {
-    next(error); // Lewatkan error ke middleware error handling (next(err))
+    res.status(400).json({ error: error.message });
   }
 };
 
-const findOne = async (req, res, next) => {
-  const { id } = req.params; // Ambil ID dari parameter URL
-
+const getUserById = async (req, res, next) => {
   try {
-    const item = await prisma.item.findUnique({
-      where: { id: parseInt(id, 10) },
-    });
-    if (!item) {
-      return res.status(404).json({ error: "Item not found" });
-    }
-    res.status(200).json(item);
+    const user = await userService.getUserById(req.params.id);
+    res.json(user);
   } catch (error) {
-    next(error); // Lewatkan error ke middleware error handling (next(err))
+    res.status(404).json({ error: error.message });
   }
 };
 
-module.exports = { update, findOne };
+module.exports = { updateUser, getUserById };

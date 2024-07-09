@@ -1,29 +1,23 @@
 const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcrypt");
+
 const prisma = new PrismaClient();
 
-const update = async (params) => {
-  const { id, data } = params;
-  try {
-    const updatedItem = await prisma.item.update({
-      where: { id },
-      data,
-    });
-    return updatedItem;
-  } catch (error) {
-    throw new Error(`Failed to update item with ID ${id}`);
+const updateUser = async (userId, updateData) => {
+  if (updateData.password) {
+    updateData.password = await bcrypt.hash(updateData.password, 10);
   }
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: updateData,
+  });
+  return user;
 };
 
-const findOne = async (params) => {
-  const { id } = params;
-  try {
-    const item = await prisma.item.findUnique({
-      where: { id },
-    });
-    return item;
-  } catch (error) {
-    throw new Error(`Item with ID ${id} not found`);
-  }
+const getUserById = async (userId) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("User not found");
+  return user;
 };
 
-module.exports = { update, findOne };
+module.exports = { updateUser, getUserById };

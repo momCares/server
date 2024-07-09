@@ -1,11 +1,13 @@
 const express = require("express");
-const router = express.Router();
 const userController = require("../controllers/userController");
+const { authentication, authorization } = require("../middlewares/auth");
 
-// Endpoint untuk mencari satu pengguna berdasarkan ID
-router.get("/:id", userController.findOne);
+const router = express.Router();
 
-// Endpoint untuk mengupdate pengguna berdasarkan ID
-router.put("/:id", userController.update);
+// router.put("/:id", authentication, authorization, userController.updateUser);
+// router.get("/:id", authentication, authorization, userController.getUserById);
+
+router.put("/:id", userController.updateUser);
+router.get("/:id", userController.getUserById);
 
 module.exports = router;
