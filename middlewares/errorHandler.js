@@ -55,9 +55,17 @@ const errorHandler = (err, req, res, next) => {
     case "InvalidUser":
       errorMessage = "You can only access your own data.";
       res.status(401).json({ message: errorMessage });
+      break;
     case "InputError":
       errorMessage = "You cant type same value.";
       res.status(401).json({ message: errorMessage });
+      break;
+
+    // Address error
+    case "AddressError":
+      errorMessage = "Address error.";
+      res.status(401).json({ message: errorMessage });
+      break;
 
     // Default error
     default:
