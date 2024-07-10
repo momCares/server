@@ -13,7 +13,15 @@ const findAll = async (params) => {
     return promo;
 };
 
-const findOne = async (params) => {};
+const findOne = async (params) => {
+  const {id} = params;
+  const promo = await prisma.promo.findUnique({
+    where :{
+      id: parseInt(id)
+    }
+  });
+  return promo;
+};
 
 const create = async (params) => {
   const {
@@ -41,7 +49,36 @@ const create = async (params) => {
   return promo;
 };
 
-const update = async (params) => {};
+const update = async (params) => {
+  const {
+    name,
+    code,
+    all_products,
+    deduction,
+    quantity,
+    start_date,
+    end_date,
+  } = params.body;  
+  const {id}= params.params
+  const startDate = convertDate(start_date);
+  const endDate = convertDate(end_date);
+  const promo = await prisma.promo.update({
+    where: {
+      id: parseInt(id),
+    },
+    data: {
+      name,
+      code,
+      all_products,
+      deduction,
+      quantity,
+      start_date: startDate,
+      end_date: endDate,
+    },
+  });
+
+  return promo;
+};
 
 const destroy = async (params) => {};
 
