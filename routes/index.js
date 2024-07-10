@@ -26,6 +26,7 @@ const storeRouteCMS = require("./cms/storeRoute");
 const PREFIX = "/v1/api";
 
 router.use(`${PREFIX}/auth`, authRoute);
+router.use(`${PREFIX}/cms/auth`, authRouteCMS);
 router.use(`${PREFIX}/products`, productRoute);
 router.use(`${PREFIX}/categories`, categoryRoute);
 router.use(authentication);
@@ -38,10 +39,9 @@ router.use(`${PREFIX}/provinces`, provinceRoute);
 router.use(`${PREFIX}/stores`, storeRoute);
 router.use(`${PREFIX}/users`, userRoute);
 
-router.use(`${PREFIX}/cms/auth`, authRouteCMS);
+router.use(`${PREFIX}/cms/products`, productRouteCMS);
 router.use(`${PREFIX}/cms/categories`, categoryRouteCMS);
 router.use(`${PREFIX}/cms/orders`, orderRouteCMS);
-router.use(`${PREFIX}/cms/products`, productRouteCMS);
 router.use(`${PREFIX}/cms/promo`, promoRouteCMS);
 router.use(`${PREFIX}/cms/stores`, storeRouteCMS);
 
