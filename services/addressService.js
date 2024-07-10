@@ -31,17 +31,17 @@ const findOne = async (addressId, userId) => {
 };
 
 const create = async (newAddress) => {
-    try {
-      const createdAddress = await prisma.address.create({
-        data: newAddress,
-      });
-      console.log(`Created new address: ${JSON.stringify(createdAddress)}`);
-      return createdAddress;
-    } catch (error) {
-      console.error(`Error while creating new address: ${error.message}`);
-      throw new Error(`Error while creating new address: ${error.message}`);
-    }
-  };
+  try {
+    const createdAddress = await prisma.address.create({
+      data: newAddress,
+    });
+    console.log(`Created new address: ${JSON.stringify(createdAddress)}`);
+    return createdAddress;
+  } catch (error) {
+    console.error(`Error while creating new address: ${error.message}`);
+    throw { name: "AddressError" };
+  }
+};
 
 const update = async (addressId, updatedFields, userId) => {
   try {
