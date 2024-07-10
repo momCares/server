@@ -1,8 +1,8 @@
 const errorHandler = (err, req, res, next) => {
   let errorMessage = "";
   // handle unique constrain
-  if(err.code == "P2002"){
-    err.name= "ErrorUniqueConstraint";
+  if (err.code == "P2002") {
+    err.name = "ErrorUniqueConstraint";
   }
   switch (err.name) {
     case "ErrorNotFound":
@@ -20,7 +20,7 @@ const errorHandler = (err, req, res, next) => {
       break;
     case "EmailAlreadyExists":
       errorMessage = "Email Already Exists";
-      res.status(409).json({ message:errorMessage });
+      res.status(409).json({ message: errorMessage });
       break;
     case "ErrorUniqueConstraint":
       errorMessage = "Email Already Exists";
@@ -36,15 +36,15 @@ const errorHandler = (err, req, res, next) => {
       res.status(409).json({ message: err.message });
     case "jwtExpired":
       errorMessage = "jwtExpired";
-      res.status(401).json({ message:errorMessage });
+      res.status(401).json({ message: errorMessage });
       break;
     case "TokenExpiredError":
       errorMessage = "Token Expired Error";
-      res.status(401).json({ message:errorMessage });
+      res.status(401).json({ message: errorMessage });
       break;
     case "JsonWebTokenError":
-      errorMessage = "JsonWebTokenError";
-      res.status(401).json({ message:errorMessage });
+      errorMessage = "JsonWeb Token Error";
+      res.status(401).json({ message: errorMessage });
       break;
     case "PasswordTooShort":
       errorMessage = "Password too short";
@@ -84,11 +84,15 @@ const errorHandler = (err, req, res, next) => {
       errorMessage = "Error Missing ID";
       res.status(400).json({ message: err.message });
       break;
+    case "CategoryNotFound":
+      errorMessage = "Category Not Found";
+      res.status(404).json({ message: errorMessage });
+      break;
 
     // Default error
     default:
       errorMessage = "Internal Server Error";
-      res.status(500).json({ message:errorMessage });
+      res.status(500).json({ message: errorMessage });
       break;
   }
 };

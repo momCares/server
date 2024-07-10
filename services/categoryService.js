@@ -2,64 +2,63 @@ const prisma = require("../lib/prisma");
 const productService = require("./productService");
 
 const findAll = async (params) => {
-  try {
-    const {
-      page = 1,
-      perPage = 10,
-      role = "User",
-      searchTerm = "",
-      status = "",
-      sortBy = "",
-    } = params;
+  const {
+    page = 1,
+    perPage = 10,
+    role = "User",
+    searchTerm = "",
+    status = "",
+    sortBy = "",
+    showDeleted = false,
+  } = params;
 
-    const offset = (page - 1) * perPage;
-    const limit = perPage;
+  const offset = (page - 1) * perPage;
+  const limit = perPage;
 
-    let where = { deleted_at: null };
-    if (role === "User") {
-      where.status = true;
-    } else {
-      if (status) {
-        where.status = status === "Active";
-      }
-    }
-    if (searchTerm) {
-      where.OR = [{ name: { contains: searchTerm, mode: "insensitive" } }];
-    }
-
-    const totalCount = await prisma.category.count({ where });
-    const orderBy = sortBy ? { [sortBy]: "asc" } : undefined;
-    const categories = await prisma.category.findMany({
-      where,
-      skip: offset,
-      take: limit,
-      orderBy,
-      include: {
-        product_categories: {
-          include: {
-            product: true,
-          },
-        },
-      },
-    });
-
-    if (!categories || categories.length === 0) {
-      throw { name: "ErrorNotFound", message: "Categories Not Found" };
-    }
-
-    const totalPages = Math.ceil(totalCount / perPage);
-    return { categories, totalPages };
-  } catch (error) {
-    throw error;
+  let where = {};
+  if (!showDeleted) {
+    where.deleted_at = null;
   }
+  if (role === "User") {
+    where.status = true;
+  }
+  if (status) {
+    where.status = status;
+  }
+  if (searchTerm) {
+    where.OR = [{ name: { contains: searchTerm, mode: "insensitive" } }];
+  }
+
+  const totalCount = await prisma.category.count({ where });
+  const orderBy = sortBy ? { [sortBy]: "asc" } : undefined;
+  const categories = await prisma.category.findMany({
+    where,
+    skip: offset,
+    take: limit,
+    orderBy,
+    include: {
+      products: true,
+    },
+  });
+
+  if (!categories || categories.length === 0) {
+    throw { name: "CategoryNotFound", message: "Categories Not Found" };
+  }
+
+  const totalPages = Math.ceil(totalCount / perPage);
+  return { categories, totalPages };
 };
 
 const findOne = async (params) => {
   try {
-    const { id, role } = params;
+    const { id, role, showDeleted = false } = params;
     const categoryId = parseInt(id);
 
-    let where = { id: categoryId, deleted_at: null };
+    let where = { id: categoryId };
+    if (!showDeleted) {
+      where.deleted_at = null;
+    }
+
     if (role === "User") {
       where.status = true;
     }
@@ -67,16 +66,12 @@ const findOne = async (params) => {
     const category = await prisma.category.findUnique({
       where,
       include: {
-        product_categories: {
-          include: {
-            product: true,
-          },
-        },
+        products: true,
       },
     });
 
     if (!category) {
-      throw { name: "ErrorNotFound", message: "Category Not Found" };
+      throw { name: "CategoryNotFound", message: "Category Not Found" };
     }
 
     return category;
@@ -141,14 +136,18 @@ const destroy = async (params) => {
 
     const result = await prisma.$transaction(async (prisma) => {
       // Soft delete products
-      await prisma.product.updateMany({
+      const products = await prisma.product.updateMany({
         where: {
-          product_categories: {
-            some: { category_id: categoryId },
-          },
+          category_id: categoryId,
         },
         data: { deleted_at: new Date() },
       });
+
+      if (products.length > 0) {
+        for (const product of products) {
+          await productService.destroy({ id: product.id });
+        }
+      }
 
       // Soft delete category
       const category = await prisma.category.update({
@@ -169,4 +168,30 @@ const destroy = async (params) => {
   }
 };
 
-module.exports = { findAll, findOne, create, update, destroy };
+const restore = async (params) => {
+  try {
+    const categoryId = parseInt(params.id);
+
+    // Restore category
+    const category = await prisma.category.update({
+      where: { id: categoryId },
+      data: { deleted_at: null },
+    });
+
+    // Restore products related to the category
+    await prisma.product.updateMany({
+      where: { category_id: categoryId },
+      data: { deleted_at: null },
+    });
+
+    return category;
+  } catch (error) {
+    if (error.name && error.message) {
+      throw error;
+    } else {
+      throw { name: "ErrorRestore", message: "Failed to Restore Category" };
+    }
+  }
+};
+
+module.exports = { findAll, findOne, create, update, destroy, restore };

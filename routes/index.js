@@ -27,10 +27,10 @@ const PREFIX = "/v1/api";
 
 router.use(`${PREFIX}/auth`, authRoute);
 router.use(`${PREFIX}/products`, productRoute);
+router.use(`${PREFIX}/categories`, categoryRoute);
 router.use(authentication);
 router.use(`${PREFIX}/address`, addressRoute);
 router.use(`${PREFIX}/carts`, cartRoute);
-router.use(`${PREFIX}/categories`, categoryRoute);
 router.use(`${PREFIX}/cities`, cityRoute);
 router.use(`${PREFIX}/orders`, orderRoute);
 router.use(`${PREFIX}/promo`, promoRoute);
