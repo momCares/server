@@ -146,7 +146,6 @@ model Product {
   keywords String?
   order_details Order_Detail[]
   product_details Cart_Detail[]
-  product_categories Product_Category[]
   product_promos Product_Promo[]
   product_images Product_Image[]
   status Boolean @default(true)
@@ -169,7 +168,6 @@ model Cart_Detail {
 model Category {
   id    Int     @id @default(autoincrement())
   name String
-  product_categories Product_Category[]
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }

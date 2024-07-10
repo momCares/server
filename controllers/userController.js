@@ -1,22 +1,31 @@
-const userService = require("../services/userService");
-const errorHandler = require("../middlewares/errorHandler");
+const {
+  getUserById: getUserByIdService,
+  updateUser: updateUserService,
+} = require("../services/userService");
 
 const updateUser = async (req, res, next) => {
   try {
-    const user = await userService.updateUser(req.params.id, req.body);
-    res.json(user);
+    const userId = parseInt(req.params.id, 10);
+    const loggedUserId = req.loggedUser.id;
+    const updateData = req.body;
+
+    const user = await updateUserService({ userId, loggedUserId, updateData });
+    res.status(200).json(user);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    next(error);
   }
 };
 
 const getUserById = async (req, res, next) => {
   try {
-    const user = await userService.getUserById(req.params.id);
-    res.json(user);
+    const userId = parseInt(req.params.id, 10);
+    const loggedUserId = req.loggedUser.id;
+
+    const user = await getUserByIdService({ userId, loggedUserId });
+    res.status(200).json(user);
   } catch (error) {
-    res.status(404).json({ error: error.message });
+    next(error);
   }
 };
 
-module.exports = { updateUser, getUserById };
+module.exports = { getUserById, updateUser };

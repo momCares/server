@@ -4,10 +4,17 @@ const { authentication, authorization } = require("../middlewares/auth");
 
 const router = express.Router();
 
-// router.put("/:id", authentication, authorization, userController.updateUser);
-// router.get("/:id", authentication, authorization, userController.getUserById);
-
-router.put("/:id", userController.updateUser);
-router.get("/:id", userController.getUserById);
+router.put(
+  "/:id",
+  authentication,
+  authorization(["admin", "user"]),
+  userController.updateUser
+);
+router.get(
+  "/:id",
+  authentication,
+  authorization(["admin", "user"]),
+  userController.getUserById
+);
 
 module.exports = router;
