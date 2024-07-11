@@ -30,11 +30,14 @@ const errorHandler = (err, req, res, next) => {
       res.status(400).json({ message: errorMessage });
       break;
     case "InvalidPassword":
-      console.log("Invalid");
       errorMessage = "Password must be longer than 6 characters";
-      return res.status(400).json({ message: errorMessage });
+      res.status(400).json({ message: errorMessage });
       break;
-    case "JwtExpired":
+    case "NameAlreadyExists":
+      errorMessage = "Name Already Exists";
+      res.status(409).json({ message: err.message });
+      break;
+    case "jwtExpired":
       errorMessage = "JWT Expired";
       res.status(401).json({ message: errorMessage });
       break;
@@ -45,6 +48,44 @@ const errorHandler = (err, req, res, next) => {
     case "JsonWebTokenError":
       errorMessage = "JSON Web Token Error";
       res.status(401).json({ message: errorMessage });
+      break;
+    case "PasswordTooShort":
+      errorMessage = "Password too short";
+      res.status(400).json({ message: err.message });
+      break;
+
+    // Error handling Products
+    case "ErrorCreate":
+      errorMessage = "Error Creating Product";
+      res.status(400).json({ message: err.message });
+      break;
+    case "ErrorUpdate":
+      errorMessage = "Error Updating Product";
+      res.status(400).json({ message: err.message });
+      break;
+    case "ErrorDelete":
+      errorMessage = "Error Deleting Product";
+      res.status(400).json({ message: err.message });
+      break;
+    case "NotEnoughStock":
+      errorMessage = "Not Enough Stock";
+      res.status(400).json({ message: err.message });
+      break;
+    case "MustPositive":
+      errorMessage = "Must be a positive number";
+      res.status(400).json({ message: err.message });
+      break;
+    case "ErrorFetch":
+      errorMessage = "Error Fetching Data";
+      res.status(500).json({ message: err.message });
+      break;
+    case "ErrorMissingFile":
+      errorMessage = "Error Missing File";
+      res.status(400).json({ message: err.message });
+      break;
+    case "ErrorMissingId":
+      errorMessage = "Error Missing ID";
+      res.status(400).json({ message: err.message });
       break;
 
     // User error
@@ -57,8 +98,8 @@ const errorHandler = (err, req, res, next) => {
       res.status(401).json({ message: errorMessage });
       break;
     case "InputError":
-      errorMessage = "You cant type same value.";
-      res.status(401).json({ message: errorMessage });
+      errorMessage = "You can't type the same value.";
+      res.status(400).json({ message: errorMessage });
       break;
 
     // Address error
@@ -68,7 +109,7 @@ const errorHandler = (err, req, res, next) => {
       break;
     case "AddressNotFound":
       errorMessage = "Can't find address";
-      res.status(401).json({ message: errorMessage });
+      res.status(404).json({ message: errorMessage });
       break;
 
     // Default error
