@@ -10,8 +10,8 @@ const findAll = async (userId) => {
     });
     return addresses;
   } catch (error) {
-    throw new Error(
-      `Error while fetching addresses for user ${userId}: ${error.message}`
+    throw new { name: "AddressNotFound" }(
+      `Error while fetching addresses for user ${userId}`
     );
   }
 };
@@ -26,7 +26,9 @@ const findOne = async (addressId, userId) => {
     });
     return address;
   } catch (error) {
-    throw new { name: "AddressError" }();
+    throw new new { name: "AddressNotFound" }(
+      `Error while fetching addresses for user ${userId}`
+    )();
   }
 };
 
@@ -35,10 +37,8 @@ const create = async (newAddress) => {
     const createdAddress = await prisma.address.create({
       data: newAddress,
     });
-    console.log(`Created new address: ${JSON.stringify(createdAddress)}`);
     return createdAddress;
   } catch (error) {
-    console.error(`Error while creating new address: ${error.message}`);
     throw { name: "AddressError" };
   }
 };

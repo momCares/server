@@ -66,6 +66,10 @@ const errorHandler = (err, req, res, next) => {
       errorMessage = "Address error.";
       res.status(401).json({ message: errorMessage });
       break;
+    case "AddressNotFound":
+      errorMessage = "Can't find address";
+      res.status(401).json({ message: errorMessage });
+      break;
 
     // Default error
     default:
