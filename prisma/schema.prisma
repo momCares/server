@@ -135,23 +135,25 @@ model Province {
 }
 
 model Product {
-  id             Int      @id @default(autoincrement())
-  name           String   @unique
-  sku            String   @unique
-  slug           String   @unique
-  price          Int
-  stock          Int
-  weight         Int
-  description    String   @db.Text
-  keywords       String?
-  order_details  Order_Detail[]
+  id    Int     @id @default(autoincrement())
+  name String @unique
+  sku String @unique
+  slug String @unique
+  price Int
+  stock Int
+  weight Int
+  description String @db.Text
+  keywords String?
+  category_id Int
+  category  Category  @relation(fields: [category_id], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  order_details Order_Detail[]
   product_details Cart_Detail[]
   product_promos Product_Promo[]
   product_images Product_Image[]
-  status         Boolean  @default(true)
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-  deleted_at     DateTime?
+  status Boolean @default(true)
+  deleted_at   DateTime?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model Cart_Detail {
@@ -167,12 +169,12 @@ model Cart_Detail {
 }
 
 model Category {
-  id                Int                  @id @default(autoincrement())
-  name              String
-  product_categories Product_Category[]
-  created_at        DateTime             @default(now())
-  updated_at        DateTime             @updatedAt
-  deleted_at        DateTime?
+  id    Int     @id @default(autoincrement())
+  name String
+  products Product[]
+  deleted_at   DateTime?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 

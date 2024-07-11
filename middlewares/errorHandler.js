@@ -87,6 +87,10 @@ const errorHandler = (err, req, res, next) => {
       errorMessage = "Error Missing ID";
       res.status(400).json({ message: err.message });
       break;
+    case "CategoryNotFound":
+      errorMessage = "Category Not Found";
+      res.status(404).json({ message: errorMessage });
+      break;
 
     // User error
     case "UserNotFound":
