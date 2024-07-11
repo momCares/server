@@ -30,16 +30,16 @@ const errorHandler = (err, req, res, next) => {
       res.status(400).json({ message: errorMessage });
       break;
     case "InvalidPassword":
-      console.log("Invalid");
       errorMessage = "Password must be longer than 6 characters";
-      return res.status(400).json({ message: errorMessage });
+      res.status(400).json({ message: errorMessage });
       break;
     case "NameAlreadyExists":
       errorMessage = "Name Already Exists";
       res.status(409).json({ message: err.message });
+      break;
     case "jwtExpired":
-      errorMessage = "jwtExpired";
-      res.status(401).json({ message:errorMessage });
+      errorMessage = "JWT Expired";
+      res.status(401).json({ message: errorMessage });
       break;
     case "TokenExpiredError":
       errorMessage = "Token Expired Error";
@@ -96,9 +96,11 @@ const errorHandler = (err, req, res, next) => {
     case "InvalidUser":
       errorMessage = "You can only access your own data.";
       res.status(401).json({ message: errorMessage });
+      break;
     case "InputError":
-      errorMessage = "You cant type same value.";
-      res.status(401).json({ message: errorMessage });
+      errorMessage = "You can't type the same value.";
+      res.status(400).json({ message: errorMessage });
+      break;
 
     // Default error
     default:
