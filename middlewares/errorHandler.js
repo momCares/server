@@ -1,50 +1,53 @@
 const errorHandler = (err, req, res, next) => {
   let errorMessage = "";
-  // handle unique constrain
-  if(err.code == "P2002"){
-    err.name= "ErrorUniqueConstraint";
+
+  // Handle unique constraint
+  if (err.code === "P2002") {
+    err.name = "ErrorUniqueConstraint";
   }
+
   switch (err.name) {
     case "ErrorNotFound":
       errorMessage = "Error Not Found";
       res.status(404).json({ name: err.name, message: errorMessage });
       break;
+
     // Error handling Login and Register
     case "Unauthorized":
       errorMessage = "Unauthorized";
       res.status(401).json({ name: err.name, message: errorMessage });
       break;
     case "InvalidCredentials":
-      errorMessage = "invalid Credentials";
+      errorMessage = "Invalid Credentials";
       res.status(401).json({ message: errorMessage });
       break;
     case "EmailAlreadyExists":
       errorMessage = "Email Already Exists";
-      res.status(409).json({ message:errorMessage });
+      res.status(409).json({ message: errorMessage });
       break;
     case "ErrorUniqueConstraint":
       errorMessage = "Email Already Exists";
       res.status(400).json({ message: errorMessage });
       break;
-    case "invalidPassword":
-      console.log("invalid");
+    case "InvalidPassword":
       errorMessage = "Password must be longer than 6 characters";
-      return res.status(400).json({ message: errorMessage });
+      res.status(400).json({ message: errorMessage });
       break;
     case "NameAlreadyExists":
       errorMessage = "Name Already Exists";
       res.status(409).json({ message: err.message });
+      break;
     case "jwtExpired":
-      errorMessage = "jwtExpired";
-      res.status(401).json({ message:errorMessage });
+      errorMessage = "JWT Expired";
+      res.status(401).json({ message: errorMessage });
       break;
     case "TokenExpiredError":
       errorMessage = "Token Expired Error";
-      res.status(401).json({ message:errorMessage });
+      res.status(401).json({ message: errorMessage });
       break;
     case "JsonWebTokenError":
-      errorMessage = "JsonWebTokenError";
-      res.status(401).json({ message:errorMessage });
+      errorMessage = "JSON Web Token Error";
+      res.status(401).json({ message: errorMessage });
       break;
     case "PasswordTooShort":
       errorMessage = "Password too short";
@@ -85,10 +88,24 @@ const errorHandler = (err, req, res, next) => {
       res.status(400).json({ message: err.message });
       break;
 
+    // User error
+    case "UserNotFound":
+      errorMessage = "User Not Found";
+      res.status(404).json({ message: errorMessage });
+      break;
+    case "InvalidUser":
+      errorMessage = "You can only access your own data.";
+      res.status(401).json({ message: errorMessage });
+      break;
+    case "InputError":
+      errorMessage = "You can't type the same value.";
+      res.status(400).json({ message: errorMessage });
+      break;
+
     // Default error
     default:
       errorMessage = "Internal Server Error";
-      res.status(500).json({ message:errorMessage });
+      res.status(500).json({ message: errorMessage });
       break;
   }
 };
