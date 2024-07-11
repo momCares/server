@@ -9,6 +9,7 @@ const errorHandler = require("./middlewares/errorHandler");
 const PORT = process.env.PORT;
 const userRoute = require("./routes/userRoute");
 const authRoute = require("./routes/authRoute");
+const addressRoute = require("./routes/addressRoute")
 
 app.use(cors());
 app.use(morgan("dev"));
@@ -19,6 +20,7 @@ app.use("/assets", express.static(path.join(__dirname, "assets")));
 // Router
 app.use("/v1/api/auth", authRoute);
 app.use("/v1/api/users", userRoute);
+app.use("/v1/api/address", addressRoute)
 
 app.use(router);
 app.use(errorHandler);

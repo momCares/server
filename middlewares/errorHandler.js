@@ -102,6 +102,16 @@ const errorHandler = (err, req, res, next) => {
       res.status(400).json({ message: errorMessage });
       break;
 
+    // Address error
+    case "AddressError":
+      errorMessage = "Address error.";
+      res.status(401).json({ message: errorMessage });
+      break;
+    case "AddressNotFound":
+      errorMessage = "Can't find address";
+      res.status(404).json({ message: errorMessage });
+      break;
+
     // Default error
     default:
       errorMessage = "Internal Server Error";
