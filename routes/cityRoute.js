@@ -1,8 +1,8 @@
 const express = require("express");
+const { getAllCities, getCityById } = require("../controllers/cityController");
 const router = express.Router();
-const cityController = require("../controllers/cityController");
 
-router.get("/", cityController.findAll);
-router.get("/:id", cityController.findOne);
+router.get("/", getAllCities);
+router.get("/:id", getCityById);
 
 module.exports = router;
