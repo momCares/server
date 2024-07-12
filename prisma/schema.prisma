@@ -54,6 +54,8 @@ model Address {
   city City    @relation(fields: [city_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   user_id Int
   user User    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  cart Cart[]
+  orders Order[]
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
@@ -64,6 +66,7 @@ model Cart {
   user User    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   shipping_cost Int?
   address_id Int?
+  address Address? @relation(fields: [address_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   promo_code String?
   promo_id Int?
   promo Promo?    @relation(fields: [promo_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -86,6 +89,7 @@ model Order {
   payment_receipt String?
   shipping_cost Int
   address_id Int
+  address Address @relation(fields: [address_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   total_cost Int
   deduction_cost Int
   net_price Int
