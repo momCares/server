@@ -83,6 +83,10 @@ const errorHandler = (err, req, res, next) => {
       errorMessage = "Error Missing File";
       res.status(400).json({ message: err.message });
       break;
+    case "ProductNotFound":
+      errorMessage = "Product Not Found";
+      res.status(404).json({ message: errorMessage });
+      break;
     case "ErrorMissingId":
       errorMessage = "Error Missing ID";
       res.status(400).json({ message: err.message });
