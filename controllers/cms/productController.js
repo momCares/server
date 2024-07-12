@@ -25,7 +25,7 @@ const findAll = async (req, res, next) => {
 const findOne = async (req, res, next) => {
   try {
     const params = {
-      id: req.params.id,
+      slug: req.params.slug,
       role: "admin",
       showDeleted: true,
     };
@@ -51,6 +51,7 @@ const uploadImage = async (req, res, next) => {
   try {
     const filePath = req.file.path;
     const productId = req.body.id;
+    console.log(productId);
     const product = await productService.uploadImage({ productId, filePath });
     res.status(200).json({ message: "Product Image Uploaded", data: product });
   } catch (error) {
