@@ -95,6 +95,10 @@ const errorHandler = (err, req, res, next) => {
       errorMessage = "Category Not Found";
       res.status(404).json({ message: errorMessage });
       break;
+    case "ErrorAlreadySKU":
+      errorMessage = "Product with this SKU already exists";
+      res.status(409).json({ message: errorMessage });
+      break;
 
     // User error
     case "UserNotFound":

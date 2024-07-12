@@ -1,174 +1,142 @@
 const prisma = require("../lib/prisma");
+const generateSlug = require("../lib/slug");
 
 const findAll = async (params) => {
-  try {
-    const {
-      page = 1,
-      perPage = 10,
-      role = "User",
-      searchTerm = "",
-      categoryId = "",
-      status = "",
-      sortBy = "",
-      showDeleted = false,
-    } = params;
+  const { page = 1, limit = 10, role = "admin", showDeleted = true } = params;
 
-    const offset = (page - 1) * perPage;
-    const limit = perPage;
+  const offset = (page - 1) * limit;
 
-    let where = {};
-    if (!showDeleted) {
-      where.deleted_at = null;
-    }
-    if (role === "User") {
-      where.status = true;
-    }
-    if (status) {
-      where.status = status;
-    }
-
-    if (categoryId) {
-      where.category_id = parseInt(categoryId);
-    }
-
-    if (searchTerm) {
-      where.OR = [
-        { name: { contains: searchTerm, mode: "insensitive" } },
-        { sku: { contains: searchTerm, mode: "insensitive" } },
-        { slug: { contains: searchTerm, mode: "insensitive" } },
-      ];
-    }
-
-    const totalCount = await prisma.product.count({ where });
-    const orderBy = sortBy ? { [sortBy]: "asc" } : undefined;
-    const products = await prisma.product.findMany({
-      where,
-      skip: offset,
-      take: limit,
-      orderBy,
-      include: {
-        category: true,
-        product_images: true,
-      },
-    });
-
-    if (!products || products.length === 0) {
-      throw { name: "ProductNotFound", message: "Products Not Found" };
-    }
-
-    const totalPages = Math.ceil(totalCount / perPage);
-    return { products, totalPages };
-  } catch (error) {
-    console.error(error);
-    throw error;
+  let whereCondition;
+  if (role === "admin" && showDeleted) {
+    whereCondition = { status: true };
+  } else {
+    whereCondition = { deleted_at: null, status: true };
   }
+
+  const totalProducts = await prisma.product.count({
+    where: whereCondition,
+  });
+
+  const products = await prisma.product.findMany({
+    take: limit,
+    skip: offset,
+    where: whereCondition,
+    include: {
+      category: true,
+      product_images: true,
+    },
+    orderBy: {
+      id: "asc",
+    },
+  });
+
+  if (!products.length) {
+    throw { name: "ErrorNotFound", message: "Product not found" };
+  }
+
+  const totalPages = Math.ceil(totalProducts / limit);
+
+  return {
+    products,
+    meta: {
+      totalProducts,
+      totalPages,
+      currentPage: page,
+      pageSize: limit,
+    },
+  };
 };
 
 const findOne = async (params) => {
-  try {
-    const { slug, role, showDeleted = false } = params;
+  const { page = 1, limit = 10, slug, role = "admin" } = params;
 
-    let where = { slug };
-    if (!showDeleted) {
-      where.deleted_at = null;
-    }
-
-    if (role === "User") {
-      where.status = true;
-    }
-
-    const product = await prisma.product.findFirst({
-      where,
-      include: {
-        category: true,
-        product_images: true,
-      },
-    });
-
-    if (!product) {
-      throw { name: "ProductNotFound", message: "Product not found" };
-    }
-
-    return product;
-  } catch (error) {
-    console.error(error);
-    if (error.name && error.message) {
-      throw error;
-    } else {
-      throw { name: "ErrorFetch", message: "Error Fetching Product" };
-    }
+  if (!slug) {
+    throw { name: "ErrorNotFound", message: "Slug is required" };
   }
-};
 
-const generateSlug = (name) => {
-  const slugifiedName = name.toLowerCase().replace(/\s+/g, "-");
-  const randomNumber = Math.floor(1000 + Math.random() * 9000);
-  const slug = `${slugifiedName}-${randomNumber}`;
-  return slug;
+  const offset = (page - 1) * limit;
+
+  const whereCondition =
+    role === "admin"
+      ? { slug, status: true }
+      : { slug, deleted_at: null, status: true };
+
+  const product = await prisma.product.findFirst({
+    take: limit,
+    skip: offset,
+    where: whereCondition,
+    include: {
+      category: true,
+      product_images: true,
+    },
+    orderBy: {
+      id: "asc",
+    },
+  });
+
+  if (!product) {
+    throw { name: "ErrorNotFound", message: "Product not found" };
+  }
+
+  return product;
 };
 
 const create = async (params) => {
-  try {
-    const {
+  const {
+    name,
+    sku,
+    price,
+    stock,
+    weight,
+    description,
+    keywords,
+    category_id,
+  } = params;
+
+  const categoryId = parseInt(category_id);
+
+  const slug = generateSlug(name);
+
+  const category = await prisma.category.findFirst({
+    where: { id: categoryId },
+  });
+
+  if (!category) {
+    throw { name: "CategoryNotFound", message: "Invalid category id" };
+  }
+
+  const product = await prisma.product.create({
+    data: {
       name,
       sku,
+      slug,
       price,
       stock,
       weight,
       description,
       keywords,
-      category_id,
-    } = params;
+      category_id: categoryId,
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
 
-    if (stock < 0 || price < 0 || weight < 0) {
-      throw {
-        name: "MustPositive",
-        message: "Stock, price, and weight cannot be negative",
-      };
-    }
-
-    const slug = generateSlug(name);
-
-    const category = await prisma.category.findFirst({
-      where: {
-        id: parseInt(category_id),
-      },
-    });
-
-    if (!category) {
-      throw { name: "CategoryNotFound", message: "Invalid category_id" };
-    }
-
-    const product = await prisma.product.create({
-      data: {
-        name,
-        sku,
-        slug,
-        price,
-        stock,
-        weight,
-        description,
-        keywords,
-        category_id,
-        updated_at: new Date(),
-      },
-    });
-
-    if (!product)
-      throw { name: "ErrorCreate", message: "Failed to Create Product" };
-
-    return product;
-  } catch (error) {
-    if (error.name && error.message) {
-      throw error;
-    } else {
-      throw { name: "ErrorCreate", message: "Failed to Create Product" };
-    }
+  if (!product) {
+    throw { name: "ErrorCreate", message: "Failed to Create Product" };
   }
+
+  return product;
 };
 
 const uploadImage = async (params) => {
-  const { productId, filePath } = params;
+  const { id, filePath } = params;
+
+  if (!id) {
+    throw {
+      name: "ErrorMissingId",
+      message: "No product ID provided",
+    };
+  }
 
   if (!filePath) {
     throw {
@@ -177,147 +145,147 @@ const uploadImage = async (params) => {
     };
   }
 
-  if (!productId) {
+  const product = await prisma.product.findFirst({
+    where: { id: parseInt(id) },
+  });
+
+  if (!product) {
     throw {
-      name: "ErrorMissingId",
-      message: "No product ID provided",
+      name: "ErrorNotFound",
+      message: "Product not found",
     };
   }
 
   const productImage = await prisma.product_Image.create({
     data: {
-      product_id: parseInt(productId),
+      product_id: parseInt(id),
       url: filePath,
     },
   });
 
   if (!productImage) {
-    throw { name: "ErrorUpload", message: "Failed to Upload Image" };
+    throw { name: "ErrorUpload", message: "Failed to upload image" };
   }
 
-  const product = await prisma.product.update({
-    where: { id: parseInt(productId) },
+  const updatedProduct = await prisma.product.update({
+    where: { id: parseInt(id) },
     data: {
       updated_at: new Date(),
     },
   });
 
-  if (!product) {
-    throw { name: "ErrorUpload", message: "Failed to Update Product" };
+  if (!updatedProduct) {
+    throw { name: "ErrorUpload", message: "Failed to update product" };
   }
+
+  return updatedProduct;
+};
+
+const update = async (params) => {
+  const {
+    id,
+    name,
+    sku,
+    price,
+    stock,
+    weight,
+    description,
+    keywords,
+    category_id,
+  } = params;
+
+  const product = await prisma.product.findFirst({
+    where: { id: parseInt(id) },
+  });
+
+  if (!product) {
+    throw { name: "ProductNotFound", message: "Product not found" };
+  }
+
+  if (category_id) {
+    const category = await prisma.category.findFirst({
+      where: { id: parseInt(category_id) },
+    });
+
+    if (!category) {
+      throw { name: "CategoryNotFound", message: "Invalid category id" };
+    }
+  }
+
+  if (sku) {
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        sku: sku,
+        id: {
+          not: parseInt(id),
+        },
+      },
+    });
+    if (existingProduct) {
+      throw { name: "ErrorAlreadySKU", message: "SKU already exists" };
+    }
+  }
+
+  const updatedProduct = await prisma.product.update({
+    where: { id: parseInt(id) },
+    data: {
+      name,
+      sku,
+      price,
+      stock,
+      weight,
+      description,
+      keywords,
+      category_id: category_id ? parseInt(category_id) : undefined,
+      updated_at: new Date(),
+    },
+  });
+
+  if (!updatedProduct) {
+    throw { name: "ErrorUpdate", message: "Failed to update product" };
+  }
+
+  return updatedProduct;
+};
+
+const destroy = async (params) => {
+  const productId = parseInt(params.id);
+
+  const cekProduct = await prisma.product.findFirst({
+    where: { id: parseInt(productId) },
+  });
+
+  if (!cekProduct) {
+    throw { name: "ProductNotFound", message: "Product not found" };
+  }
+
+  // Soft delete products
+  const product = await prisma.product.update({
+    where: { id: productId },
+    data: { deleted_at: new Date() },
+  });
 
   return product;
 };
 
-const update = async (params) => {
-  try {
-    const {
-      id,
-      name,
-      description,
-      price,
-      weight,
-      category_id,
-      stock,
-      sku,
-      keywords,
-    } = params;
-
-    const cekProduct = await prisma.product.findFirst({
-      where: {
-        id: parseInt(id),
-      },
-    });
-
-    if (!cekProduct) {
-      throw {
-        name: "ErrorNotFound",
-        message: "product Not Found or Inactive",
-      };
-    }
-
-    const category = await prisma.category.findFirst({
-      where: {
-        id: parseInt(category_id),
-      },
-    });
-
-    if (!category) {
-      throw {
-        name: "CategoryNotFound",
-        message: "Category Not Found or Inactive",
-      };
-    }
-
-    const slug = generateSlug(name);
-
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        name,
-        sku,
-        slug,
-        price: parseInt(price),
-        stock: parseInt(stock),
-        weight: parseFloat(weight),
-        description,
-        keywords,
-        category_id: parseInt(category_id),
-        updated_at: new Date(),
-      },
-    });
-
-    if (!product)
-      throw { name: "ErrorUpdate", message: "Failed to Update Product" };
-
-    return product;
-  } catch (error) {
-    if (error.name && error.message) {
-      throw error;
-    } else {
-      throw { name: "ErrorUpdate", message: "Failed to Update Product" };
-    }
-  }
-};
-
-const destroy = async (params) => {
-  try {
-    const productId = parseInt(params.id);
-
-    // Soft delete products
-    const product = await prisma.product.update({
-      where: { id: productId },
-      data: { deleted_at: new Date() },
-    });
-
-    return product;
-  } catch (error) {
-    if (error.name && error.message) {
-      throw error;
-    } else {
-      throw { name: "ErrorDelete", message: "Failed to Delete Product" };
-    }
-  }
-};
-
 const restore = async (params) => {
-  try {
-    const productId = parseInt(params.id);
+  const productId = parseInt(params.id);
 
-    // Restore product
-    const product = await prisma.product.update({
-      where: { id: productId },
-      data: { deleted_at: null },
-    });
+  const cekProduct = await prisma.product.findFirst({
+    where: { id: parseInt(productId) },
+  });
 
-    return product;
-  } catch (error) {
-    if (error.name && error.message) {
-      throw error;
-    } else {
-      throw { name: "ErrorRestore", message: "Failed to Restore Product" };
-    }
+  if (!cekProduct) {
+    throw { name: "ProductNotFound", message: "Product not found" };
   }
+
+  // Restore product
+  const product = await prisma.product.update({
+    where: { id: productId },
+    data: { deleted_at: null },
+  });
+
+  return product;
 };
 
 module.exports = {
