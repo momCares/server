@@ -105,6 +105,17 @@ const create = async (params) => {
     throw { name: "CategoryNotFound", message: "Invalid category id" };
   }
 
+  if (sku) {
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        sku: sku,
+      },
+    });
+    if (existingProduct) {
+      throw { name: "ErrorAlreadySKU", message: "SKU already exists" };
+    }
+  }
+
   const product = await prisma.product.create({
     data: {
       name,
