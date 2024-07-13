@@ -1,8 +1,11 @@
 const express = require("express");
+const {
+  getAllProvinces,
+  getProvinceById,
+} = require("../controllers/provinceController");
 const router = express.Router();
-const provinceController = require("../controllers/provinceController");
 
-router.get("/", provinceController.findAll);
-router.get("/:id", provinceController.findOne);
+router.get("/", getAllProvinces);
+router.get("/:id", getProvinceById);
 
 module.exports = router;
