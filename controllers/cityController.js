@@ -1,5 +1,21 @@
-const findAll = async (req, res, next) => {};
+const cityService = require("../services/cityService");
 
-const findOne = async (req, res, next) => {};
+const getAllCities = async (req, res, next) => {
+  try {
+    const cities = await cityService.findAll();
+    res.json(cities);
+  } catch (error) {
+    next(error);
+  }
+};
 
-module.exports = { findAll, findOne };
+const getCityById = async (req, res, next) => {
+  try {
+    const city = await cityService.findOne(req.params.id);
+    res.json(city);
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getAllCities, getCityById };

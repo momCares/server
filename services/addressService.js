@@ -1,7 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-const findAll = async (userId) => {
+const findAll = async (params) => {
+  const { userId } = params;
   try {
     const addresses = await prisma.address.findMany({
       where: {
@@ -10,40 +11,15 @@ const findAll = async (userId) => {
     });
     return addresses;
   } catch (error) {
-    throw new { name: "AddressNotFound" }(
-      `Error while fetching addresses for user ${userId}`
-    );
+    throw {
+      name: "AddressError",
+      message: `Error while fetching addresses for user ${userId}`,
+    };
   }
 };
 
-const findOne = async (addressId, userId) => {
-  try {
-    const address = await prisma.address.findFirst({
-      where: {
-        id: addressId,
-        user_id: userId,
-      },
-    });
-    return address;
-  } catch (error) {
-    throw new new { name: "AddressNotFound" }(
-      `Error while fetching addresses for user ${userId}`
-    )();
-  }
-};
-
-const create = async (newAddress) => {
-  try {
-    const createdAddress = await prisma.address.create({
-      data: newAddress,
-    });
-    return createdAddress;
-  } catch (error) {
-    throw { name: "AddressError" };
-  }
-};
-
-const update = async (addressId, updatedFields, userId) => {
+const findOne = async (params) => {
+  const { addressId, userId } = params;
   try {
     const address = await prisma.address.findFirst({
       where: {
@@ -52,7 +28,56 @@ const update = async (addressId, updatedFields, userId) => {
       },
     });
     if (!address) {
-      throw new { name: "AddressError" }();
+      throw {
+        name: "AddressNotFound",
+        message: `Address with ID ${addressId} not found or unauthorized.`,
+      };
+    }
+    return address;
+  } catch (error) {
+    if (error.name !== "AddressNotFound") {
+      throw {
+        name: "AddressError",
+        message: `Error while fetching address with ID ${addressId} for user ${userId}`,
+      };
+    }
+    throw error;
+  }
+};
+
+const create = async (params) => {
+  const { newAddress } = params;
+  try {
+    const createdAddress = await prisma.address.create({
+      data: {
+        title: newAddress.title,
+        description: newAddress.description,
+        zip_code: newAddress.zip_code,
+        city_id: newAddress.city_id,
+        province_id: newAddress.province_id,
+        user_id: newAddress.user_id,
+      },
+    });
+    return createdAddress;
+  } catch (error) {
+    throw { name: "AddressError", message: "Error while creating address" };
+  }
+};
+
+const update = async (params) => {
+  const { addressId, updatedFields, userId } = params;
+  try {
+    const address = await prisma.address.findFirst({
+      where: {
+        id: addressId,
+        user_id: userId,
+      },
+    });
+    if (!address) {
+      throw {
+        name: "AddressNotFound",
+        message: `Address with ID ${addressId} not found or unauthorized`,
+      };
     }
     const updatedAddress = await prisma.address.update({
       where: {
@@ -62,11 +87,15 @@ const update = async (addressId, updatedFields, userId) => {
     });
     return updatedAddress;
   } catch (error) {
-    throw new { name: "AddressError" }();
+    if (error.name !== "AddressNotFound") {
+      throw { name: "AddressError", message: "Error while updating address" };
+    }
+    throw error;
   }
 };
 
-const destroy = async (addressId, userId) => {
+const destroy = async (params) => {
+  const { addressId, userId } = params;
   try {
     const address = await prisma.address.findFirst({
       where: {
@@ -75,7 +104,10 @@ const destroy = async (addressId, userId) => {
       },
     });
     if (!address) {
-      throw new { name: "AddressError" }();
+      throw {
+        name: "AddressNotFound",
+        message: `Address with ID ${addressId} not found or unauthorized`,
+      };
     }
     const deletedAddress = await prisma.address.delete({
       where: {
@@ -84,7 +116,10 @@ const destroy = async (addressId, userId) => {
     });
     return deletedAddress;
   } catch (error) {
-    throw { name: "AddressError" };
+    if (error.name !== "AddressNotFound") {
+      throw { name: "AddressError", message: "Error while deleting address" };
+    }
+    throw error;
   }
 };
 

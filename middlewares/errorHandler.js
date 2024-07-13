@@ -120,6 +120,16 @@ const errorHandler = (err, req, res, next) => {
       res.status(404).json({ message: errorMessage });
       break;
 
+    // City and Province error
+    case "CityNotFound":
+      errorMessage = "City Not Found";
+      res.status(404).json({ message: errorMessage });
+      break;
+    case "ProvinceNotFound":
+      errorMessage = "Province Not Found";
+      res.status(404).json({ message: errorMessage });
+      break;
+
     // Default error
     default:
       errorMessage = "Internal Server Error";
