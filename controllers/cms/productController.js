@@ -1,19 +1,8 @@
 const productService = require("../../services/productService");
 
-const limit = 10;
-
 const findAll = async (req, res, next) => {
   try {
-    const params = {
-      page: req.query.page ? parseInt(req.query.page) : 1,
-      perPage: limit,
-      role: "admin",
-      searchTerm: req.query.searchTerm,
-      status: req.query.status,
-      sortBy: req.query.sortBy,
-      showDeleted: true,
-    };
-    const products = await productService.findAll(params);
+    const products = await productService.findAll(req.query);
     res
       .status(200)
       .json({ message: "Success Get All Products", data: products });
@@ -24,12 +13,7 @@ const findAll = async (req, res, next) => {
 
 const findOne = async (req, res, next) => {
   try {
-    const params = {
-      slug: req.params.slug,
-      role: "admin",
-      showDeleted: true,
-    };
-    const product = await productService.findOne(params);
+    const product = await productService.findOne(req.params);
     res
       .status(200)
       .json({ message: "Product Data By ID Found", data: product });
@@ -49,12 +33,12 @@ const create = async (req, res, next) => {
 
 const uploadImage = async (req, res, next) => {
   try {
+    const { id } = req.params;
     const filePath = req.file.path;
-    const productId = req.body.id;
-    console.log(productId);
-    const product = await productService.uploadImage({ productId, filePath });
+    const product = await productService.uploadImage({ id, filePath });
     res.status(200).json({ message: "Product Image Uploaded", data: product });
   } catch (error) {
+    console.error(error);
     next(error);
   }
 };

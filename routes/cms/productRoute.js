@@ -10,7 +10,7 @@ router.post("/", authorization(["admin"]), productController.create);
 router.put("/:id", authorization(["admin"]), productController.update);
 router.delete("/:id", authorization(["admin"]), productController.destroy);
 router.post(
-  "/uploads",
+  "/uploads/:id",
   authorization(["admin"]),
   upload.single("image"),
   productController.uploadImage
