@@ -24,7 +24,7 @@ const reset = async (req, res, next) => {
 
 const update = async (req, res, next) => {
     try {
-        const params = { user_id: req.loggedUser.id};
+        const params = { user_id: req.loggedUser.id, req: req};
         const cart = await cartService.update(params);
         res.status(200).json({ message: "Cart Updated", data: cart });
     } catch (error) {
