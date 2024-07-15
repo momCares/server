@@ -195,6 +195,7 @@ model Promo {
   orders Order[]
   cart Cart[]
   product_promos Product_Promo[]
+  deleted_at  DateTime?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
@@ -205,6 +206,7 @@ model Product_Promo {
   product Product    @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   promo_id Int
   promo Promo    @relation(fields: [promo_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  deleted_at  DateTime?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }

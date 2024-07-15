@@ -7,5 +7,6 @@ router.get("/:id", promoController.findOne);
 router.post("/", promoController.create);
 router.put("/:id", promoController.update);
 router.delete("/:id", promoController.destroy);
+router.post("/restore/:id", promoController.restore);
 
 module.exports = router;
