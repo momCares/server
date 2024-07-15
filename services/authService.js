@@ -8,7 +8,7 @@ const generateAffiliateCode = (name) => {
   return `${name.slice(0, 3).toUpperCase()}${uniqueSuffix}`;
 };
 const register = async (params) => {
-  const { name, email, password, role = "user" } = params;
+  const { name, email, password, role = "user",affiliate_code=null } = params;
 
   // validasi jumlah password
   if (password.length <= 6) {
@@ -42,7 +42,25 @@ const register = async (params) => {
       cart: true,
     },
   });
-
+  if(affiliateCode!=null){
+    let check_affiliate = await prisma.affiliate.findFirst({
+      where: { 
+        code:affiliate_code,
+      },
+    });
+    if(check_affiliate==null){
+      throw { name: "ErrorNotFound",message:"Code Affiliate Not Found" };
+    }else{
+      await prisma.affiliate.update({
+        where: {
+          id:user.affiliate.id,
+        },
+        data:{
+          deduction:50
+        }
+      })
+    }
+  }
   return user;
 };
 
