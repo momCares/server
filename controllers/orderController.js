@@ -3,12 +3,10 @@ const orderService = require('../services/orderService');
 //creating new order
 const create = async (req, res, next) => {
   try {
-    const orderData = req.body;
-    const userId = req.userId; // From authMiddleware
+    const params = { user_id: req.loggedUser.id, req: req.body};
 
-    const order = await orderService.createOrder(userId, orderData);
-
-    res.status(201).json(order);
+    const order = await orderService.createOrder(params);
+    res.status(200).json({ message: "Order Success", data: order });
   } catch (error) {
     next(error); // Pass error to next middleware
   }
@@ -17,7 +15,7 @@ const create = async (req, res, next) => {
 //fetching all order
 const findAll = async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId =  req.loggedUser.id;
 
     const orders = await orderService.findAllOrders(userId);
 
