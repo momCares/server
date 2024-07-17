@@ -3,7 +3,6 @@ const categoryService = require("../services/categoryService");
 const findAll = async (req, res, next) => {
   try {
     const params = {
-      id: req.params.id,
       role: "user",
     };
     const category = await categoryService.findAll(params);
