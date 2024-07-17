@@ -17,17 +17,33 @@ const findAll = async (req, res, next) => {
 const findOne = async (req, res, next) => {
   try {
     const params = {
-      slug: req.params.slug,
+      id: req.params.id,
       role: "user",
     };
-    console.log(params);
     const product = await productService.findOne(params);
     res
       .status(200)
       .json({ message: "Product Data By ID Found", data: product });
   } catch (error) {
+    console.error(error);
     next(error);
   }
 };
 
-module.exports = { findAll, findOne };
+const findSlug = async (req, res, next) => {
+  try {
+    const params = {
+      slug: req.params.slug,
+      role: "user",
+    };
+    const product = await productService.findSlug(params);
+    res
+      .status(200)
+      .json({ message: "Product Data By Slug Found", data: product });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
+module.exports = { findAll, findOne, findSlug };

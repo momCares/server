@@ -5,7 +5,8 @@ const upload = require("../../middlewares/multer");
 const { authorization } = require("../../middlewares/auth");
 
 router.get("/", authorization(["admin"]), productController.findAll);
-router.get("/:slug", authorization(["admin"]), productController.findOne);
+router.get("/:id", authorization(["admin"]), productController.findOne);
+router.get("/slug/:slug", authorization(["admin"]), productController.findSlug);
 router.post("/", authorization(["admin"]), productController.create);
 router.put("/:id", authorization(["admin"]), productController.update);
 router.delete("/:id", authorization(["admin"]), productController.destroy);
