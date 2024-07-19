@@ -3,8 +3,9 @@ const promoService = require("../../services/promoService");
 const findAll = async (req, res, next) => {
   try {
     const promo = await promoService.findAll(req);
-    res.status(201).json({ message: "Promo", data: promo });
+    res.status(201).json({ message: "Success Get All Promo", data: promo });
   } catch (err) {
+    console.error(err);
     next(err);
   }
 };
@@ -12,7 +13,7 @@ const findAll = async (req, res, next) => {
 const findOne = async (req, res, next) => {
   try {
     const promo = await promoService.findOne(req.params);
-    res.status(201).json({ message: "Promo", data: promo });
+    res.status(201).json({ message: "Promo Data By ID Found", data: promo });
   } catch (err) {
     next(err);
   }

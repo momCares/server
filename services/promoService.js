@@ -9,26 +9,87 @@ const convertDate = (params) => {
   return isodateString;
 };
 const findAll = async (params) => {
+  const { page = 1, limit = 10, role = "admin", showDeleted = true } = params;
+
+  const offset = (page - 1) * limit;
+
+  let whereCondition = {};
+  if (role === "admin" && showDeleted) {
+    whereCondition = {
+      OR: [{ deleted_at: null }, { deleted_at: { not: null } }],
+    };
+  } else {
+    whereCondition = {
+      deleted_at: null,
+    };
+  }
+
+  const totalPromo = await prisma.promo.count({
+    where: whereCondition,
+  });
+
   const promo = await prisma.promo.findMany({
-    where: {},
+    take: limit,
+    skip: offset,
+    where: whereCondition,
     include: {
-      product_promos: true,
+      product_promos: {
+        where: whereCondition,
+      },
     },
     orderBy: {
       start_date: "asc",
     },
   });
-  return promo;
+
+  const totalPages = Math.ceil(totalPromo / limit);
+
+  return {
+    promo,
+    meta: {
+      totalPromo,
+      totalPages,
+      currentPage: page,
+      pageSize: limit,
+    },
+  };
 };
 
 const findOne = async (params) => {
-  const { id } = params;
+  const { id, role = "admin", showDeleted = true } = params;
+
+  const promoId = parseInt(id);
+
+  let whereCondition = {};
+  if (role === "admin" && showDeleted) {
+    whereCondition = {
+      id: promoId,
+      OR: [{ deleted_at: null }, { deleted_at: { not: null } }],
+    };
+  } else {
+    whereCondition = {
+      id: promoId,
+      deleted_at: null,
+    };
+  }
+
+  let productPromosConditon = {};
+  if (role === "admin" && showDeleted) {
+    productPromosConditon = {
+      OR: [{ deleted_at: null }, { deleted_at: { not: null } }],
+    };
+  } else {
+    productPromosConditon = {
+      deleted_at: null,
+    };
+  }
+
   const promo = await prisma.promo.findUnique({
-    where: {
-      id: parseInt(id),
-    },
+    where: whereCondition,
     include: {
-      product_promos: true,
+      product_promos: {
+        where: productPromosConditon,
+      },
     },
   });
   return promo;
@@ -44,7 +105,13 @@ const create = async (params) => {
     products,
     start_date,
     end_date,
+    role = "admin",
   } = params;
+
+  if (role !== "admin") {
+    throw { name: "Unauthorized", message: "Only admin can create a category" };
+  }
+
   const startDate = convertDate(start_date);
   const endDate = convertDate(end_date);
   const promo = await prisma.promo.create({
@@ -59,7 +126,7 @@ const create = async (params) => {
     },
   });
 
-  if (all_products == false && products.length > 0) {
+  if (!all_products && products.length > 0) {
     for (const product of products) {
       await prisma.product_Promo.create({
         data: {
@@ -83,7 +150,14 @@ const update = async (params) => {
     products,
     start_date,
     end_date,
+    role = "admin",
   } = params.body;
+
+  console.log(role, "ROLEEE");
+
+  if (role !== "admin") {
+    throw { name: "Unauthorized", message: "Only admin can create a category" };
+  }
 
   console.log(params, "AAAAAAAAAAA");
 
@@ -109,47 +183,43 @@ const update = async (params) => {
     },
   });
 
-  if (all_products == false && products.length > 0) {
-    // Loop through the provided products
-    for (const product of products) {
-      const { product_id, remove } = product;
-      const productPromo = promo.product_promos.find(
-        (pp) => pp.product_id === product_id
-      );
+  if (!all_products) {
+    // Hapus semua relasi lama terlebih dahulu
+    await prisma.product_Promo.deleteMany({
+      where: {
+        promo_id: promo.id,
+      },
+    });
 
-      if (productPromo) {
-        if (remove) {
-          // Soft delete the product from the promo
-          await prisma.product_Promo.update({
-            where: {
-              id: productPromo.id,
-            },
-            data: {
-              deleted_at: new Date(),
-            },
-          });
-        } else {
-          // Update the existing product promo entry
-          await prisma.product_Promo.update({
-            where: {
-              id: productPromo.id,
-            },
-            data: {
-              promo_id: promo.id,
-              product_id: product_id,
-              deleted_at: null,
-            },
-          });
-        }
+    // Tambahkan produk baru
+    if (products.length > 0) {
+      for (const product of products) {
+        await prisma.product_Promo.create({
+          data: {
+            promo_id: promo.id,
+            product_id: product.product_id,
+          },
+        });
       }
     }
+  } else {
+    // Hapus semua relasi jika all_products bernilai true
+    await prisma.product_Promo.deleteMany({
+      where: {
+        promo_id: promo.id,
+      },
+    });
   }
 
   return promo;
 };
 
 const destroy = async (params) => {
-  const { id } = params;
+  const { id, role = "admin" } = params;
+
+  if (role !== "admin") {
+    throw { name: "Unauthorized", message: "Only admin can create a category" };
+  }
 
   const promoId = await prisma.promo.findFirst({
     where: {
@@ -175,7 +245,12 @@ const destroy = async (params) => {
 };
 
 const restore = async (params) => {
-  const { id } = params;
+  const { id, role = "admin" } = params;
+
+  if (role !== "admin") {
+    throw { name: "Unauthorized", message: "Only admin can create a category" };
+  }
+
   const promoId = await prisma.promo.findFirst({
     where: {
       id: parseInt(id),
@@ -198,4 +273,60 @@ const restore = async (params) => {
   return promo;
 };
 
-module.exports = { findAll, findOne, create, update, destroy, restore };
+const apply = async (params) => {
+  const { id } = params;
+
+  const promoId = parseInt(id);
+
+  console.log(params, "AAAAAAA");
+
+  // Cari promo berdasarkan ID dan validasi tanggal
+  const promo = await prisma.promo.findFirst({
+    where: {
+      id: promoId,
+      start_date: { lte: new Date() },
+      end_date: { gte: new Date() },
+      deleted_at: null,
+    },
+    include: {
+      product_promos: {
+        where: {
+          deleted_at: null,
+        },
+      },
+    },
+  });
+
+  if (!promo) {
+    throw {
+      name: "ErrorNotFound",
+      message: "Promo code is invalid or expired",
+    };
+  }
+
+  if (promo.quantity <= 0) {
+    throw {
+      name: "ErrorNotFound",
+      message: "Promo is out of stock",
+    };
+  }
+
+  // Kurangi quantity promo
+  await prisma.promo.update({
+    where: {
+      id: promoId,
+    },
+    data: {
+      quantity: {
+        decrement: 1,
+      },
+    },
+  });
+
+  return {
+    promo: promo,
+    discount: promo.deduction,
+  };
+};
+
+module.exports = { findAll, findOne, create, update, destroy, restore, apply };
