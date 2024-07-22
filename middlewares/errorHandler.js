@@ -9,7 +9,7 @@ const errorHandler = (err, req, res, next) => {
   switch (err.name) {
     case "ErrorNotFound":
       errorMessage = "Error Not Found";
-      res.status(404).json({ name: err.name, message: errorMessage });
+      res.status(404).json({ name: err.name, message: err.message?? errorMessage });
       break;
 
     // Error handling Login and Register
@@ -26,7 +26,7 @@ const errorHandler = (err, req, res, next) => {
       res.status(409).json({ message: errorMessage });
       break;
     case "ErrorUniqueConstraint":
-      errorMessage = "Email Already Exists";
+      errorMessage = err.meta.target+" Already Exists";
       res.status(400).json({ message: errorMessage });
       break;
     case "InvalidPassword":
