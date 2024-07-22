@@ -1,24 +1,96 @@
 const prisma = require("../lib/prisma");
 // convert date
 const convertDate = (params) => {
-    // returns the difference between UTC time and local time.
-    // returns the difference in minutes.
+  // returns the difference between UTC time and local time.
+  // returns the difference in minutes.
   const offset = new Date().getTimezoneOffset();
   const myDate = Date.parse(params) - offset * 60 * 100;
   const isodateString = new Date(myDate).toISOString();
   return isodateString;
 };
 const findAll = async (params) => {
-    const promo = await prisma.promo.findMany();
-    return promo;
+  const { page = 1, limit = 10, role = "admin", showDeleted = true } = params;
+
+  const offset = (page - 1) * limit;
+
+  let whereCondition = {};
+  if (role === "admin" && showDeleted) {
+    whereCondition = {
+      OR: [{ deleted_at: null }, { deleted_at: { not: null } }],
+    };
+  } else {
+    whereCondition = {
+      deleted_at: null,
+    };
+  }
+
+  const totalPromo = await prisma.promo.count({
+    where: whereCondition,
+  });
+
+  const promo = await prisma.promo.findMany({
+    take: limit,
+    skip: offset,
+    where: whereCondition,
+    include: {
+      product_promos: {
+        where: whereCondition,
+      },
+    },
+    orderBy: {
+      start_date: "asc",
+    },
+  });
+
+  const totalPages = Math.ceil(totalPromo / limit);
+
+  return {
+    promo,
+    meta: {
+      totalPromo,
+      totalPages,
+      currentPage: page,
+      pageSize: limit,
+    },
+  };
 };
 
 const findOne = async (params) => {
-  const {id} = params;
+  const { id, role = "admin", showDeleted = true } = params;
+
+  const promoId = parseInt(id);
+
+  let whereCondition = {};
+  if (role === "admin" && showDeleted) {
+    whereCondition = {
+      id: promoId,
+      OR: [{ deleted_at: null }, { deleted_at: { not: null } }],
+    };
+  } else {
+    whereCondition = {
+      id: promoId,
+      deleted_at: null,
+    };
+  }
+
+  let productPromosConditon = {};
+  if (role === "admin" && showDeleted) {
+    productPromosConditon = {
+      OR: [{ deleted_at: null }, { deleted_at: { not: null } }],
+    };
+  } else {
+    productPromosConditon = {
+      deleted_at: null,
+    };
+  }
+
   const promo = await prisma.promo.findUnique({
-    where :{
-      id: parseInt(id)
-    }
+    where: whereCondition,
+    include: {
+      product_promos: {
+        where: productPromosConditon,
+      },
+    },
   });
   return promo;
 };
@@ -53,6 +125,7 @@ const findOneByCode = async (params) => {
   });
   return cart_update;
 };
+// validate promo
 const validatePromo = async(params)=>{
   const {promo,cart_id} = params;
   let cart_Details = await prisma.cart_Detail.findMany({
@@ -95,9 +168,16 @@ const create = async (params) => {
     all_products,
     deduction,
     quantity,
+    products,
     start_date,
     end_date,
+    role = "admin",
   } = params;
+
+  if (role !== "admin") {
+    throw { name: "Unauthorized", message: "Only admin can create a category" };
+  }
+
   const startDate = convertDate(start_date);
   const endDate = convertDate(end_date);
   const promo = await prisma.promo.create({
@@ -111,6 +191,18 @@ const create = async (params) => {
       end_date: endDate,
     },
   });
+
+  if (!all_products && products.length > 0) {
+    for (const product of products) {
+      await prisma.product_Promo.create({
+        data: {
+          promo_id: promo.id,
+          product_id: product.product_id,
+        },
+      });
+    }
+  }
+
   return promo;
 };
 
@@ -121,10 +213,19 @@ const update = async (params) => {
     all_products,
     deduction,
     quantity,
+    products,
     start_date,
     end_date,
-  } = params.body;  
-  const {id}= params.params
+    role = "admin",
+  } = params.body;
+
+
+  if (role !== "admin") {
+    throw { name: "Unauthorized", message: "Only admin can create a category" };
+  }
+
+
+  const { id } = params.params;
   const startDate = convertDate(start_date);
   const endDate = convertDate(end_date);
   const promo = await prisma.promo.update({
@@ -140,11 +241,99 @@ const update = async (params) => {
       start_date: startDate,
       end_date: endDate,
     },
+    include: {
+      product_promos: true,
+    },
+  });
+
+  if (!all_products) {
+    // Hapus semua relasi lama terlebih dahulu
+    await prisma.product_Promo.deleteMany({
+      where: {
+        promo_id: promo.id,
+      },
+    });
+
+    // Tambahkan produk baru
+    if (products.length > 0) {
+      for (const product of products) {
+        await prisma.product_Promo.create({
+          data: {
+            promo_id: promo.id,
+            product_id: product.product_id,
+          },
+        });
+      }
+    }
+  } else {
+    // Hapus semua relasi jika all_products bernilai true
+    await prisma.product_Promo.deleteMany({
+      where: {
+        promo_id: promo.id,
+      },
+    });
+  }
+
+  return promo;
+};
+
+const destroy = async (params) => {
+  const { id, role = "admin" } = params;
+
+  if (role !== "admin") {
+    throw { name: "Unauthorized", message: "Only admin can create a category" };
+  }
+
+  const promoId = await prisma.promo.findFirst({
+    where: {
+      id: parseInt(id),
+    },
+  });
+
+  if (!promoId) {
+    throw { name: "ErrorNotFound", message: "Promo not found" };
+  }
+
+  // Soft delete the promo
+  const promo = await prisma.promo.update({
+    where: {
+      id: parseInt(id),
+    },
+    data: {
+      deleted_at: new Date(),
+    },
   });
 
   return promo;
 };
 
-const destroy = async (params) => {};
+const restore = async (params) => {
+  const { id, role = "admin" } = params;
 
-module.exports = { findAll, findOne, create, update, findOneByCode, destroy };
+  if (role !== "admin") {
+    throw { name: "Unauthorized", message: "Only admin can create a category" };
+  }
+
+  const promoId = await prisma.promo.findFirst({
+    where: {
+      id: parseInt(id),
+    },
+  });
+  if (!promoId) {
+    throw { name: "ErrorNotFound", message: "Promo not found" };
+  }
+
+  // Restore the promo
+  const promo = await prisma.promo.update({
+    where: {
+      id: parseInt(id),
+    },
+    data: {
+      deleted_at: null,
+    },
+  });
+
+  return promo;
+};
+
+module.exports = { findAll, findOne, create, update, restore,findOneByCode, destroy };

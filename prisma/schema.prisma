@@ -195,6 +195,7 @@ model Promo {
   product_promos Product_Promo[]
   created_at     DateTime        @default(now())
   updated_at     DateTime        @updatedAt
+  deleted_at  DateTime?
 }
 
 model Product_Promo {
@@ -205,6 +206,7 @@ model Product_Promo {
   promo      Promo    @relation(fields: [promo_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  deleted_at  DateTime?
 }
 
 model Product_Image {
