@@ -1,35 +1,20 @@
 const categoryService = require("../../services/categoryService");
 
-const limit = 10;
-
 const findAll = async (req, res, next) => {
   try {
-    const params = {
-      page: req.query.page ? parseInt(req.query.page) : 1,
-      perPage: limit,
-      role: "admin",
-      searchTerm: req.query.searchTerm,
-      status: req.query.status,
-      sortBy: req.query.sortBy,
-      showDeleted: true,
-    };
-    const category = await categoryService.findAll(params);
+    const category = await categoryService.findAll(req.query);
     res
       .status(200)
-      .json({ message: "Success Get All Checkout", data: category });
+      .json({ message: "Success Get All Categories", data: category });
   } catch (error) {
+    console.error(error);
     next(error);
   }
 };
 
 const findOne = async (req, res, next) => {
   try {
-    const params = {
-      id: req.params.id,
-      role: "admin",
-      showDeleted: true,
-    };
-    const category = await categoryService.findOne(params);
+    const category = await categoryService.findOne(req.params);
     res
       .status(200)
       .json({ message: "Category Data By ID Found", data: category });
@@ -60,12 +45,7 @@ const update = async (req, res, next) => {
 
 const destroy = async (req, res, next) => {
   try {
-    const params = {
-      id: req.params.id,
-      role: "admin",
-    };
-
-    const category = await categoryService.destroy(params);
+    const category = await categoryService.destroy(req.params);
     res.status(200).json({ message: "Category Deleted", data: category });
   } catch (err) {
     next(err);
@@ -74,11 +54,7 @@ const destroy = async (req, res, next) => {
 
 const restore = async (req, res, next) => {
   try {
-    const params = {
-      id: req.params.id,
-      role: "admin",
-    };
-    const category = await categoryService.restore(params);
+    const category = await categoryService.restore(req.params);
     res.status(200).json({ message: "Success Restore", data: category });
   } catch (error) {
     next(error);

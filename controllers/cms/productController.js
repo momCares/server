@@ -22,6 +22,17 @@ const findOne = async (req, res, next) => {
   }
 };
 
+const findSlug = async (req, res, next) => {
+  try {
+    const product = await productService.findSlug(req.params);
+    res
+      .status(200)
+      .json({ message: "Product Data By ID Found", data: product });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const create = async (req, res, next) => {
   try {
     const product = await productService.create(req.body);
@@ -83,6 +94,7 @@ const restore = async (req, res, next) => {
 module.exports = {
   findAll,
   findOne,
+  findSlug,
   create,
   uploadImage,
   update,
