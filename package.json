@@ -6,9 +6,13 @@
   "directories": {
     "lib": "lib"
   },
+  "prisma": {
+  "seed": "node prisma/seed.js"
+},
   "scripts": {
     "dev": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
+    
   },
   "author": "",
   "license": "ISC",
