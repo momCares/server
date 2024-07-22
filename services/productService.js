@@ -48,18 +48,86 @@ const findAll = async (params) => {
 };
 
 const findOne = async (params) => {
-  const { page = 1, limit = 10, slug, role = "admin" } = params;
+  const {
+    page = 1,
+    limit = 10,
+    id,
+    role = "admin",
+    showDeleted = true,
+  } = params;
+
+  if (!id) {
+    throw { name: "ErrorNotFound", message: "Id is required" };
+  }
+
+  const productId = parseInt(id);
+
+  const offset = (page - 1) * limit;
+
+  let whereCondition = {};
+
+  if (role === "admin" && showDeleted) {
+    whereCondition = {
+      id: productId,
+      status: true,
+    };
+  } else {
+    whereCondition = {
+      id: productId,
+      deleted_at: null,
+      status: true,
+    };
+  }
+
+  const product = await prisma.product.findFirst({
+    take: limit,
+    skip: offset,
+    where: whereCondition,
+    include: {
+      category: true,
+      product_images: true,
+    },
+    orderBy: {
+      id: "asc",
+    },
+  });
+
+  if (!product) {
+    throw { name: "ErrorNotFound", message: "Product not found" };
+  }
+
+  return product;
+};
+
+const findSlug = async (params) => {
+  const {
+    page = 1,
+    limit = 10,
+    slug,
+    role = "admin",
+    showDeleted = true,
+  } = params;
 
   if (!slug) {
-    throw { name: "ErrorNotFound", message: "Slug is required" };
+    throw { name: "ErrorNotFound", message: "Id is required" };
   }
 
   const offset = (page - 1) * limit;
 
-  const whereCondition =
-    role === "admin"
-      ? { slug, status: true }
-      : { slug, deleted_at: null, status: true };
+  let whereCondition = {};
+
+  if (role === "admin" && showDeleted) {
+    whereCondition = {
+      slug,
+      status: true,
+    };
+  } else {
+    whereCondition = {
+      slug,
+      deleted_at: null,
+      status: true,
+    };
+  }
 
   const product = await prisma.product.findFirst({
     take: limit,
@@ -103,17 +171,6 @@ const create = async (params) => {
 
   if (!category) {
     throw { name: "CategoryNotFound", message: "Invalid category id" };
-  }
-
-  if (sku) {
-    const existingProduct = await prisma.product.findFirst({
-      where: {
-        sku: sku,
-      },
-    });
-    if (existingProduct) {
-      throw { name: "ErrorAlreadySKU", message: "SKU already exists" };
-    }
   }
 
   const product = await prisma.product.create({
@@ -223,20 +280,6 @@ const update = async (params) => {
     }
   }
 
-  if (sku) {
-    const existingProduct = await prisma.product.findFirst({
-      where: {
-        sku: sku,
-        id: {
-          not: parseInt(id),
-        },
-      },
-    });
-    if (existingProduct) {
-      throw { name: "ErrorAlreadySKU", message: "SKU already exists" };
-    }
-  }
-
   const updatedProduct = await prisma.product.update({
     where: { id: parseInt(id) },
     data: {
@@ -302,6 +345,7 @@ const restore = async (params) => {
 module.exports = {
   findAll,
   findOne,
+  findSlug,
   create,
   uploadImage,
   update,
