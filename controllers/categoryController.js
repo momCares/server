@@ -1,16 +1,9 @@
 const categoryService = require("../services/categoryService");
 
-const limit = 10;
-
 const findAll = async (req, res, next) => {
   try {
     const params = {
-      page: req.query.page ? parseInt(req.query.page) : 1,
-      perPage: limit,
       role: "user",
-      searchTerms: req.query.searchTerms,
-      status: req.query.status,
-      sortBy: req.query.sortBy,
     };
     const category = await categoryService.findAll(params);
     res
