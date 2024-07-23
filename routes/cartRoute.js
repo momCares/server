@@ -4,7 +4,8 @@ const cartController = require("../controllers/cartController");
 
 router.get("/", cartController.findOne);
 router.delete("/", cartController.reset);
-router.patch("/", cartController.update);
+router.put("/", cartController.update);
 router.delete("/:product_id", cartController.deleteProduct);
+router.get("/shipping", cartController.getAllShipping);
 
 module.exports = router;
