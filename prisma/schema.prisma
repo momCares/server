@@ -10,7 +10,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:Hajimetenoaku1@localhost:5432/seed"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -47,6 +47,7 @@ model Address {
   id          Int      @id @default(autoincrement())
   title       String
   description String   @db.Text
+  detail_address String
   zip_code    Int
   province_id Int
   province    Province @relation(fields: [province_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
