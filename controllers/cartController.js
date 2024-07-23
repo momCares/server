@@ -1,4 +1,5 @@
 const cartService = require('../services/cartService')
+const shippingCostService = require('../services/shippingCostService')
 
 const findOne = async (req, res, next) => {
     try {
@@ -32,6 +33,17 @@ const update = async (req, res, next) => {
     }
 };
 
+const getAllShipping = async (req, res, next) =>{
+    try {
+        const params  = {user_id: req.loggedUser.id, body: req.body};
+        const shipping_all = await shippingCostService.getShippingCostAll(params);
+        res.status(200).json({ message: "Shipping Cost", data: shipping_all });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
 const deleteProduct = async (req, res, next) => {};
 
-module.exports = { findOne, reset, update, deleteProduct };
+module.exports = { findOne, reset, update, getAllShipping, deleteProduct };
