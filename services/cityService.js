@@ -6,7 +6,6 @@ const findAll = async () => {
 };
 
 const findOne = async (id) => {
-  try {
     const cityId = parseInt(id, 10);
 
     const city = await prisma.city.findUnique({ where: { id: cityId } });
@@ -16,9 +15,6 @@ const findOne = async (id) => {
     }
 
     return city;
-  } catch (error) {
-    throw error;
-  }
 };
 
 module.exports = { findAll, findOne };
