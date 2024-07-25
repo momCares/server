@@ -3,23 +3,20 @@ const shippingCostService = require("../services/shippingCostService");
 
 const createOrder = async (params) => {
   await prisma.$transaction(async (prisma) => {
-    let shipping_cost =
-      (total_weight =
-      shiping_cost =
-      total_cost =
-      net_price =
-      deduction_cost =
-      deduction_percent =
-        0);
-    const { quantity, addres_id, courier_name, shipping_method, promo_code } =
-      params.req;
+    let shipping_cost = 
+    (total_weight = 
+      total_cost = 
+      net_price = 
+      deduction_cost = 
+      deduction_percent = 0);
+    const { quantity, address_id, courier_name, shipping_method, promo_code } = params.req;
     let promo_id = null;
 
-    // check use affiliate or not
+    // Check for affiliate
     const affiliate = await prisma.affiliate.findUnique({
       where: { user_id: Number(params.user_id), status: true },
     });
-    if(affiliate!=null){
+    if (affiliate != null) {
       await prisma.affiliate.update({
         where: { user_id: Number(params.user_id), status: true },
         data: {
@@ -28,20 +25,17 @@ const createOrder = async (params) => {
         },
       });
     }
-    // check user use promo code or not
+
+    // Check for promo code
     if (promo_code != null) {
       let promo = await prisma.promo.findUnique({
-        where: {
-          code: promo_code,
-        },
+        where: { code: promo_code },
       });
       if (promo == null) {
         throw { name: "ErrorNotFound", message: "Promo Not Found" };
       } else {
         if (promo.start_date != null && promo.end_date != null) {
-          if (
-            !(promo.start_date <= new Date() && promo.end_date >= new Date())
-          ) {
+          if (!(promo.start_date <= new Date() && promo.end_date >= new Date())) {
             throw { name: "ErrorNotFound", message: "Promo Expired" };
           }
         } else if (promo.start_date != null) {
@@ -53,8 +47,7 @@ const createOrder = async (params) => {
           throw { name: "ErrorNotFound", message: "Cant Use this Promo" };
         }
         promo_id = promo.id;
-
-        const update_promo = await prisma.promo.update({
+        await prisma.promo.update({
           where: { id: promo.id },
           data: {
             quantity: promo.quantity - 1,
@@ -63,10 +56,9 @@ const createOrder = async (params) => {
         });
       }
     }
+
     const address = await prisma.address.findUnique({
-      where: {
-        id: addres_id,
-      },
+      where: { id: address_id },
     });
 
     const order = await prisma.order.create({
@@ -75,23 +67,20 @@ const createOrder = async (params) => {
         courier: courier_name,
         promo_id: promo_id,
         status: "waiting_payment",
-        address_id: addres_id,
+        address_id: address_id,
+        quantity: 0,
         shipping_cost: 0,
         total_cost: 0,
         deduction_cost: 0,
         net_price: 0,
       },
     });
-    const products = params.req.products.map(
-      (product_id) => product_id.product_id
-    );
-    const all_quantity = params.req.products.map(
-      (quantity) => quantity.quantity
-    );
+
+    const products = params.req.products.map(product => product.product_id);
+    const all_quantity = params.req.products.map(quantity => quantity.quantity);
 
     if (products.length > 0) {
       for (let i = 0; i < products.length; i++) {
-        // const element = array[index];
         let get_product = await prisma.product.findUnique({
           where: { id: products[i] },
           select: {
@@ -100,7 +89,7 @@ const createOrder = async (params) => {
             stock: true,
           },
         });
-        const create_order_details = await prisma.order_Detail.create({
+        await prisma.order_Detail.create({
           data: {
             order_id: order.id,
             product_id: products[i],
@@ -108,7 +97,7 @@ const createOrder = async (params) => {
             price: get_product.price,
           },
         });
-        const update_product = await prisma.product.update({
+        await prisma.product.update({
           where: { id: products[i] },
           data: {
             stock: get_product.stock - all_quantity[i],
@@ -119,7 +108,7 @@ const createOrder = async (params) => {
         total_cost += all_quantity[i] * get_product.price;
       }
     }
-    // for params rajaongkir
+
     const shipping_cost_params = {
       city_id: address.city_id,
       total_weight,
@@ -128,23 +117,18 @@ const createOrder = async (params) => {
       store_city_id: 444,
     };
     if (total_weight > 0) {
-      shipping_cost = await shippingCostService.getShippingCost(
-        shipping_cost_params
-      );
+      shipping_cost = await shippingCostService.getShippingCost(shipping_cost_params);
     }
-    // deductioncost from total_cost * (affiliate+promo)/100
-    // 50% + 10%
-    if(affiliate==null){
-      deduction_cost =
-      (total_cost * ( deduction_percent)) / 100;
-    }else{
-      deduction_cost =
-      (total_cost * (affiliate.deduction + deduction_percent)) / 100;
+
+    if (affiliate == null) {
+      deduction_cost = (total_cost * deduction_percent) / 100;
+    } else {
+      deduction_cost = (total_cost * (affiliate.deduction + deduction_percent)) / 100;
     }
-    
-    // Calculate net price = total cost + shipping cost -deduction_cost
+
     net_price = total_cost + shipping_cost - deduction_cost;
-    const update_order = await prisma.order.update({
+
+    await prisma.order.update({
       where: { id: order.id },
       data: {
         shipping_cost: shipping_cost,
@@ -153,22 +137,49 @@ const createOrder = async (params) => {
         net_price: net_price,
       },
     });
-    
-    return update_order;
+
+    return order;
   });
 };
 
-const findAllOrders = async (userId) => {
-  const orders = await prisma.order.findMany({
-    where: { user_id: userId },
-  });
-  return orders;
+const findAllOrders = async (userId, page = 1, pageSize = 10) => {
+  const skip = (page - 1) * pageSize;
+  const take = pageSize;
+
+  const [orders, totalOrders] = await prisma.$transaction([
+    prisma.order.findMany({
+      where: { user_id: userId },
+      skip: skip,
+      take: take,
+      orderBy: {
+        created_at: 'desc',
+      },
+      include: {
+        order_details: true,
+      },
+    }),
+    prisma.order.count({
+      where: { user_id: userId },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(totalOrders / pageSize);
+
+  return {
+    data: orders,
+    pagination: {
+      totalOrders,
+      totalPages,
+      currentPage: page,
+      pageSize,
+    },
+  };
 };
 
 const findOrderById = async (orderId) => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { orderDetails: true },
+    include: { order_details: true },
   });
   return order;
 };
