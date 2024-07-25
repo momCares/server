@@ -1,7 +1,9 @@
+const paginate = require("../lib/pagination");
 const prisma = require("../lib/prisma");
 
 const findAll = async (params) => {
-  const { page = 1, limit = 10, role = "admin", showDeleted = true } = params;
+  const {role= "admin", showDeleted = true }=params.role;
+  const { page = 1, limit = 10} = params.req;
 
   const offset = (page - 1) * limit;
 
@@ -21,7 +23,7 @@ const findAll = async (params) => {
   });
 
   const categories = await prisma.category.findMany({
-    take: limit,
+    take: Number(limit),
     skip: offset,
     where: whereCondition,
     include: {
@@ -32,20 +34,11 @@ const findAll = async (params) => {
     },
   });
 
-  if (!categories.length) {
-    throw { name: "CategoryNotFound", message: "Categories Not Found" };
-  }
-
   const totalPages = Math.ceil(totalCategories / limit);
+  const pagination = paginate({result:categories,count:totalCategories,limit:Number(limit),page:Number(page)});
 
   return {
-    categories,
-    meta: {
-      totalCategories,
-      totalPages,
-      currentPage: page,
-      pageSize: limit,
-    },
+    pagination
   };
 };
 

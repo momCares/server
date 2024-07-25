@@ -1,14 +1,37 @@
+const paginate = require("../lib/pagination");
 const prisma = require("../lib/prisma");
 require("dotenv").config();
 const axios = require("axios");
 
 const findOne = async (params) => {
   const user_id = params.user_id;
+  const { page = 1, limit = 10} = params.req;
+  const offset = (page - 1) * limit;
   const cart = await prisma.cart.findFirst({
     where: { user_id: user_id },
-    include: { cart_details: true },
   });
-  return cart;
+  const totalCartDetails = await prisma.cart_Detail.count({
+    where: {
+      cart_id:cart.id
+    },
+  });
+
+  const cartDetails = await prisma.cart_Detail.findMany({
+    take: Number(limit),
+    skip: offset,
+    where: {
+      cart_id:cart.id
+    },
+    include: {
+      product: true,
+    },
+    orderBy: {
+      id: "asc",
+    },
+  }); 
+  const pagination = paginate({result:cartDetails,count:totalCartDetails,limit:Number(limit),page:Number(page)});
+
+  return pagination;
 };
 
 const reset = async (params) => {

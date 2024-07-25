@@ -2,7 +2,11 @@ const categoryService = require("../../services/categoryService");
 
 const findAll = async (req, res, next) => {
   try {
-    const category = await categoryService.findAll(req.query);
+    const params = {
+      role: "admin",
+      req : req.query,
+    };
+    const category = await categoryService.findAll(params);
     res
       .status(200)
       .json({ message: "Success Get All Categories", data: category });

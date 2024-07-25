@@ -3,7 +3,7 @@ const shippingCostService = require('../services/shippingCostService')
 
 const findOne = async (req, res, next) => {
     try {
-        const params = { user_id: req.loggedUser.id};
+        const params = { user_id: req.loggedUser.id,req:req.query};
         const cart = await cartService.findOne(params);
         res.status(200).json({ message: "Cart : ", data: cart });
 
