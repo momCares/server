@@ -8,11 +8,15 @@ const generateAffiliateCode = (name) => {
   return `${name.slice(0, 3).toUpperCase()}${uniqueSuffix}`;
 };
 async function main() {
+  // Menghapus data lama (optional)
   await prisma.category.deleteMany({});
   await prisma.city.deleteMany({});
   await prisma.order.deleteMany({});
   await prisma.affiliate.deleteMany({});
   await prisma.user.deleteMany({});
+  await prisma.address.deleteMany({});
+  await prisma.cart.deleteMany({});
+  await prisma.promo.deleteMany({});
 
   await prisma.category.create({
     data: {
@@ -22,7 +26,7 @@ async function main() {
           {
             name: "Baju bayi putih",
             product_images: {
-              create: { url: "https://placeholder.com/2131231.jpg" },
+              create: { url: "https://rb.gy/w7mdfy" },
             },
             description: "Baju putih untuk bayi",
             price: 60000,
@@ -35,7 +39,7 @@ async function main() {
           {
             name: "Celana bayi",
             product_images: {
-              create: { url: "https://placeholder./2929292.jpg" },
+              create: { url: "https://rb.gy/59nihg" },
             },
             description: "celana untuk bayi.",
             price: 40000,
@@ -48,7 +52,7 @@ async function main() {
           {
             name: "Overall Bayi",
             product_images: {
-              create: { url: "https://placeholder.come/overallbayi.jpg" },
+              create: { url: "https://rb.gy/r91jel" },
             },
             description: "Baju overall bayi",
             price: 200000,
@@ -61,7 +65,7 @@ async function main() {
           {
             name: "Set Baju one piece",
             product_images: {
-              create: { url: "https://placeholder.com/setbaju/jpg" },
+              create: { url: "https://rb.gy/dzyqqo" },
             },
             description: "set baju one piece bayi",
             price: 250000,
@@ -74,7 +78,7 @@ async function main() {
           {
             name: "Topi Bayi",
             product_images: {
-              create: { url: "https://placeholder.com/topibayi.jpg" },
+              create: { url: "https://rb.gy/4g5yla" },
             },
             description: "Topi bayi",
             price: 100000,
@@ -97,7 +101,7 @@ async function main() {
           {
             name: "botol bayi",
             product_images: {
-              create: { url: "https://placeholder.com/1544655638.jpg" },
+              create: { url: "https://rb.gy/flu4aq" },
             },
             description: "botol menyusu",
             price: 200000,
@@ -110,7 +114,7 @@ async function main() {
           {
             name: "Sendok Plastik",
             product_images: {
-              create: { url: "https://placeholder.com/31453356673.jpg" },
+              create: { url: "https://rb.gy/67ez4a" },
             },
             description: "Sendok Plastik warna warni.",
             price: 20000,
@@ -133,7 +137,7 @@ async function main() {
           {
             name: "Handuk",
             product_images: {
-              create: { url: "https://placeholder.com/25745623453.jpg" },
+              create: { url: "https://rb.gy/95wvsn" },
             },
             description: "Handuk",
             price: 120000,
@@ -146,7 +150,7 @@ async function main() {
           {
             name: "sabun Mandi bayi",
             product_images: {
-              create: { url: "https://placeholder.com/2313123.jpg" },
+              create: { url: "https://rb.gy/br4k2s" },
             },
             description: "Sabun Mandi bayi.",
             price: 200000,
@@ -159,7 +163,7 @@ async function main() {
           {
             name: "tempat Sabun Kodok",
             product_images: {
-              create: { url: "https://placeholder.com/3413412.jpg" },
+              create: { url: "https://rb.gy/kdamv3" },
             },
             description: "Sendok Stainless Steel.",
             price: 120000,
@@ -183,7 +187,7 @@ async function main() {
             name: "gendongan anak",
             product_images: {
               create: {
-                url: "https://i.pinimg.com/736x/5f/2b/5a/5f2b5ad142a741928e7dfc95bf69dc73.jpg",
+                url: "https://rb.gy/63td5g",
               },
             },
             description: "untuk membantu ibu mengendong anaknya dengan nyaman.",
@@ -218,7 +222,7 @@ async function main() {
     "https://api.rajaongkir.com/starter/province",
     {
       headers: {
-        key: process.env.RAJAONGKIR_API_KEY,
+        key: process.env.RAJAONGKIR_SECRET_KEY,
       },
     }
   );
@@ -231,7 +235,7 @@ async function main() {
 
   let cities = await axios.get("https://api.rajaongkir.com/starter/city", {
     headers: {
-      key: process.env.RAJAONGKIR_API_KEY,
+      key: process.env.RAJAONGKIR_SECRET_KEY,
     },
   });
   cities = cities.data.rajaongkir.results.map((city) => {
@@ -248,34 +252,104 @@ async function main() {
 
   console.log("City Seeding Success");
 
+  const promo1 = await prisma.promo.create({
+    data: {
+      name: "Promo Final Project",
+      code: "FINPRO",
+      all_products: true,
+      deduction: 10,
+      quantity: 10,
+      start_date: new Date(),
+      end_date: new Date(new Date().getTime() + 3600000 * 24 * 30), // Promo berlaku 30 hari
+    },
+  });
+
+  const promo2 = await prisma.promo.create({
+    data: {
+      name: "Promo Tahunan",
+      code: "TAHUNAN",
+      all_products: false,
+      deduction: 10,
+      quantity: 10,
+      start_date: new Date(),
+      end_date: new Date(new Date().getTime() + 3600000 * 24 * 365), // Promo berlaku 1 tahun
+    },
+  });
+
+  await prisma.product_Promo.createMany({
+    data: [
+      {
+        product_id: 704,
+        promo_id: promo2.id,
+      },
+      {
+        product_id: 705,
+        promo_id: promo2.id,
+      },
+      {
+        product_id: 706,
+        promo_id: promo2.id,
+      },
+    ],
+  });
+
   const user1 = await prisma.user.create({
     data: {
       email: "user@gmail.com",
       name: "Dono",
       role: "user",
       password: bcrypt.hashPassword("rumpang"),
+      affiliate: {
+        create: {
+          code: generateAffiliateCode(""),
+          deduction: 10,
+        },
+      },
       addresses: {
         create: [
           {
-            title: "kantor",
-            description: "kantor",
-            detail_address: "JL.Satwamarga no.33",
-            city: {
-              connect: {
-                id: 22,
-              },
-            },
-            province: {
-              connect: {
-                id: 9,
-              },
-            },
+            title: "Kos",
+            description: "Kos",
+            detail_address: "JL. Griya Kos no.123",
+            city_id: 22,
+            province_id: 9,
+            zip_code: 89933,
+          },
+          {
+            title: "Rumah",
+            description: "Rumah",
+            detail_address: "JL. Raya no.456",
+            city_id: 22,
+            province_id: 9,
             zip_code: 89933,
           },
         ],
       },
-      affiliate: { create: { code: generateAffiliateCode(""), deduction: 10 } },
+      cart: {
+        create: {
+          shipping_cost: 20000,
+          address_id: 64,
+          promo_id: promo1.id,
+          total_cost: 300000,
+          deduction_cost: 30000,
+          net_price: 270000,
+          cart_details: {
+            create: [
+              { product_id: 707, quantity: 2, price: 200000 },
+              { product_id: 708, quantity: 1, price: 150000 },
+              { product_id: 709, quantity: 3, price: 450000 },
+            ],
+          },
+        },
+      },
+      orders: {
+        create: [],
+      },
     },
+  });
+
+  const affiliateCodeUser1 = await prisma.affiliate.findUnique({
+    where: { user_id: user1.id },
   });
 
   const user2 = await prisma.user.create({
@@ -284,70 +358,97 @@ async function main() {
       name: "jasson",
       role: "user",
       password: bcrypt.hashPassword("thecakeisalie"),
-      addresses: {
-        create: [
-          {
-            title: "rumah",
-            description: "rumah",
-            detail_address: "JL.Gatotwaluyo no.82",
-            city: {
-              connect: {
-                id: 53,
-              },
-            },
-            province: {
-              connect: {
-                id: 30,
-              },
-            },
-            zip_code: 88002,
-          },
-        ],
+      affiliate: {
+        create: {
+          code: generateAffiliateCode(""),
+          deduction: 10,
+        },
       },
-      affiliate: { create: { code: generateAffiliateCode(""), deduction: 10 } },
+      addresses: {
+        create: {
+          title: "Kantor",
+          description: "Kantor",
+          detail_address: "JL.Satwamarga no.33",
+          city_id: 22,
+          province_id: 9,
+          zip_code: 89933,
+        },
+      },
+      cart: {
+        create: {
+          shipping_cost: 25000,
+          address_id: 66,
+          promo_code: affiliateCodeUser1.code,
+          promo_id: promo2.id,
+          total_cost: 400000,
+          deduction_cost: 20000,
+          net_price: 380000,
+          cart_details: {
+            create: [
+              { product_id: 710, quantity: 1, price: 150000 },
+              { product_id: 705, quantity: 2, price: 300000 },
+              { product_id: 706, quantity: 1, price: 200000 },
+            ],
+          },
+        },
+      },
+      orders: {
+        create: [],
+      },
     },
   });
 
   const admin = await prisma.user.create({
     data: {
-      email: "jovanonahak@gmail.com",
-      name: "jovano",
+      email: "admin@gmail.com",
+      name: "admin",
       role: "admin",
-      password: bcrypt.hashPassword("adminpass2"),
+      password: bcrypt.hashPassword("admin"),
     },
   });
 
-  await prisma.order.createMany({
-    data: [
-      {
-        user_id: user1.id,
-        promo_id: 1,
-        courier: "JNE",
-        status: "waiting_payment",
-        payment_receipt: "123456789",
-        shipping_cost: 10000,
-        address_id: 29, // input manual sesuaikan database
-        total_cost: 100000,
-        deduction_cost: 10000,
-        net_price: 90000,
-        created_at: new Date(),
-        updated_at: new Date(),
+  const order1 = await prisma.order.create({
+    data: {
+      user_id: user1.id,
+      courier: "JNE",
+      status: "waiting_payment",
+      payment_receipt: "123456789",
+      shipping_cost: 5000,
+      address_id: 64,
+      total_cost: 100000,
+      deduction_cost: 5000,
+      net_price: 95000,
+      promo_id: promo1.id,
+      order_details: {
+        create: [
+          { product_id: 707, quantity: 2, price: 200000 },
+          { product_id: 708, quantity: 1, price: 150000 },
+          { product_id: 709, quantity: 3, price: 450000 },
+        ],
       },
-      {
-        user_id: user2.id,
-        promo_id: 1,
-        courier: "POS",
-        status: "processed",
-        payment_receipt: "123456789",
-        shipping_cost: 10000,
-        address_id: 30, // input manual sesuaikan database
-        total_cost: 100000,
-        deduction_cost: 10000,
-        net_price: 90000,
-        created_at: new Date(),
-        updated_at: new Date(),
+    },
+  });
+
+  const order2 = await prisma.order.create({
+    data: {
+      user_id: user2.id,
+      courier: "POS",
+      status: "processed",
+      payment_receipt: "987654321",
+      shipping_cost: 10000,
+      address_id: 66,
+      total_cost: 200000,
+      deduction_cost: 10000,
+      net_price: 190000,
+      promo_id: promo2.id,
+      order_details: {
+        create: [
+          { product_id: 710, quantity: 1, price: 150000 },
+          { product_id: 705, quantity: 2, price: 300000 },
+          { product_id: 706, quantity: 1, price: 200000 },
+        ],
       },
-    ],
+    },
   });
 
   process.exit();
