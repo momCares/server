@@ -1,3 +1,4 @@
+const paginate = require("../lib/pagination");
 const prisma = require("../lib/prisma");
 // convert date
 const convertDate = (params) => {
@@ -9,10 +10,9 @@ const convertDate = (params) => {
   return isodateString;
 };
 const findAll = async (params) => {
-  const { page = 1, limit = 10, role = "admin", showDeleted = true } = params;
-
-  const offset = (page - 1) * limit;
-
+  const {role= "admin", showDeleted = true }=params.role;
+  const { page = 1, limit = 10} = params.req;
+  const offset = (page - 1) * Number(limit);
   let whereCondition = {};
   if (role === "admin" && showDeleted) {
     whereCondition = {
@@ -29,7 +29,7 @@ const findAll = async (params) => {
   });
 
   const promo = await prisma.promo.findMany({
-    take: limit,
+    take: Number(limit),
     skip: offset,
     where: whereCondition,
     include: {
@@ -43,15 +43,10 @@ const findAll = async (params) => {
   });
 
   const totalPages = Math.ceil(totalPromo / limit);
-
+  const pagination = paginate({result:promo,count:totalPromo,limit:Number(limit),page:Number(page)});
+  // const pagination = paginate()
   return {
-    promo,
-    meta: {
-      totalPromo,
-      totalPages,
-      currentPage: page,
-      pageSize: limit,
-    },
+    pagination
   };
 };
 
@@ -101,6 +96,7 @@ const findOneByCode = async (params) => {
       code: promo_code
     }
   });
+
   if (!promo) {
     throw { name: "ErrorNotFound", message: "Promo Not Found" };
   }
@@ -113,6 +109,7 @@ const findOneByCode = async (params) => {
     promo:promo,
     cart_id:cart.id
   };
+
   const validate = await validatePromo(params_promo);
   const cart_update = await prisma.cart.update({
     where: {
@@ -128,9 +125,7 @@ const findOneByCode = async (params) => {
 // validate promo
 const validatePromo = async(params)=>{
   const {promo,cart_id} = params;
-  let cart_Details = await prisma.cart_Detail.findMany({
-    where:{cart_id:cart_id}
-  });
+
   if(promo.start_date!=null && promo.end_date!=null){
     if(!(promo.start_date<= new Date() && promo.end_date>= new Date())){
       throw { name: "ErrorNotFound", message:"Promo Expired" };
@@ -144,6 +139,9 @@ const validatePromo = async(params)=>{
     throw { name: "ErrorNotFound", message:"Cant Use this Promo" };
   }
   if(promo.all_products==false){
+    let cart_Details = await prisma.cart_Detail.findMany({
+      where:{cart_id:cart_id}
+    });
     if (cart_Details.length > 0) {
       for (let i = 0; i < cart_Details.length; i++) {
         const check_promo_product = await prisma.product_Promo.findFirst({
@@ -187,11 +185,8 @@ const create = async (params) => {
       all_products,
       deduction,
       quantity,
-      start_date: startDate,
-      end_date: endDate,
     },
   });
-
   if (!all_products && products.length > 0) {
     for (const product of products) {
       await prisma.product_Promo.create({

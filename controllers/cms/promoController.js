@@ -1,8 +1,14 @@
+const { query } = require("express");
 const promoService = require("../../services/promoService");
 
 const findAll = async (req, res, next) => {
   try {
-    const promo = await promoService.findAll(req);
+    const params = {
+      role: "admin",
+      req : req.query,
+    };
+
+    const promo = await promoService.findAll(params);
     res.status(201).json({ message: "Success Get All Promo", data: promo });
   } catch (err) {
     console.error(err);
