@@ -32,7 +32,11 @@ const getUserById = async (params) => {
     throw { name: "InvalidUser" };
   }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { affiliate: true }, // Include the affiliate
+  });
+
   if (!user) {
     throw { name: "UserNotFound" };
   }
