@@ -2,8 +2,8 @@ const paginate = require("../lib/pagination");
 const prisma = require("../lib/prisma");
 
 const findAll = async (params) => {
-  const {role= "admin", showDeleted = true }=params.role;
-  const { page = 1, limit = 10} = params.req;
+  const { role = "admin", showDeleted = true } = params;
+  const { page = 1, limit = 10 } = params.req;
 
   const offset = (page - 1) * limit;
 
@@ -35,29 +35,30 @@ const findAll = async (params) => {
   });
 
   const totalPages = Math.ceil(totalCategories / limit);
-  const pagination = paginate({result:categories,count:totalCategories,limit:Number(limit),page:Number(page)});
+  const pagination = paginate({
+    result: categories,
+    count: totalCategories,
+    limit: Number(limit),
+    page: Number(page),
+  });
 
   return {
-    pagination
+    categories,
+    pagination,
   };
 };
 
 const findOne = async (params) => {
-  const {
-    page = 1,
-    limit = 10,
-    id,
-    role = "admin",
-    showDeleted = true,
-  } = params;
+  const { id, role = "admin", showDeleted = true } = params;
 
-  const categoryId = parseInt(id);
+  const categoryId = parseInt(id, 10);
 
-  if (!categoryId) {
-    throw { name: "ErrorNotFound", message: "Id is required" };
+  if (isNaN(categoryId)) {
+    throw {
+      name: "ErrorNotFound",
+      message: "Id is required and must be a number",
+    };
   }
-
-  const offset = (page - 1) * limit;
 
   let whereCondition = {};
   if (role === "admin" && showDeleted) {
@@ -73,10 +74,7 @@ const findOne = async (params) => {
   }
 
   const category = await prisma.category.findFirst({
-    take: limit,
-    skip: offset,
     where: whereCondition,
-
     include: {
       products: true,
     },
