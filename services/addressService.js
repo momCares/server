@@ -41,13 +41,12 @@ const findOne = async (params) => {
 const create = async (params) => {
   const { newAddress } = params;
 
-  // console.log('Creating address with data:', newAddress);
-
   try {
     // Validate input data
     const requiredFields = [
       "title",
       "description",
+      "detail_address",
       "zip_code",
       "city_id",
       "province_id",
@@ -55,7 +54,10 @@ const create = async (params) => {
     ];
     for (const field of requiredFields) {
       if (!newAddress[field]) {
-        throw new Error(`Missing required field: ${field}`);
+        throw {
+          name: "ErrorCreate",
+          message: `Missing required field: ${field}`,
+        };
       }
     }
 
@@ -64,6 +66,7 @@ const create = async (params) => {
       data: {
         title: newAddress.title,
         description: newAddress.description,
+        detail_address: newAddress.detail_address,
         zip_code: newAddress.zip_code,
         city_id: newAddress.city_id,
         province_id: newAddress.province_id,
@@ -71,11 +74,9 @@ const create = async (params) => {
       },
     });
 
-    // console.log('Address created successfully:', createdAddress);
     return createdAddress;
   } catch (error) {
-    console.error("Error creating address:", error);
-    throw new Error("Internal Server Error");
+    throw { name: "ErrorCreate" };
   }
 };
 
@@ -97,7 +98,6 @@ const update = async (params) => {
         message: `Address with ID ${addressId} not found or unauthorized`,
       };
     }
-    // console.log('Existing address:', address);
 
     const updatedAddress = await prisma.address.update({
       where: {
@@ -105,6 +105,7 @@ const update = async (params) => {
       },
       data: {
         description: updatedFields.description,
+        detail_address: updatedFields.detail_address,
         zip_code: updatedFields.zip_code,
         city: {
           connect: { id: updatedFields.city_id },
@@ -115,8 +116,6 @@ const update = async (params) => {
         updated_at: new Date(),
       },
     });
-
-    // console.log('Updated address:', updatedAddress);
 
     return updatedAddress;
   } catch (error) {
