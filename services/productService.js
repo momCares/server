@@ -25,12 +25,14 @@ const findAll = async (params) => {
   ];
   const validSortOrders = ["asc", "desc"];
 
+  const trimmedSortOrder = (sortOrder || "").trim().toLowerCase();
+
   if (!validSortFields.includes(sortBy)) {
-    throw new Error(`Invalid sortBy field: ${sortBy}`);
+    throw { name: "ErrorFetch" };
   }
 
-  if (!validSortOrders.includes(sortOrder)) {
-    throw new Error(`Invalid sortOrder value: ${sortOrder}`);
+  if (!validSortOrders.includes(trimmedSortOrder)) {
+    throw { name: "ErrorFetch" };
   }
 
   const limitInt = parseInt(limit, 10) || 10;
@@ -38,10 +40,9 @@ const findAll = async (params) => {
   const offset = (pageInt - 1) * limitInt;
 
   let whereCondition = {
-    status: true, // Default to active products
+    status: true,
   };
 
-  // Adjust the whereCondition based on the role and showDeleted flag
   if (role === "admin") {
     if (!showDeleted) {
       whereCondition.deleted_at = null;
@@ -50,7 +51,6 @@ const findAll = async (params) => {
     whereCondition.deleted_at = null;
   }
 
-  // Add search terms condition if provided
   if (searchTerms) {
     whereCondition.name = {
       contains: searchTerms,
@@ -58,17 +58,14 @@ const findAll = async (params) => {
     };
   }
 
-  // Add category filter if categoryId is provided
   if (categoryId) {
     whereCondition.category_id = parseInt(categoryId, 10);
   }
 
-  // Fetch the total count of products matching the conditions
   const totalProducts = await prisma.product.count({
     where: whereCondition,
   });
 
-  // Fetch the products matching the conditions with pagination and sorting
   const products = await prisma.product.findMany({
     take: limitInt,
     skip: offset,
@@ -78,19 +75,16 @@ const findAll = async (params) => {
       product_images: true,
     },
     orderBy: {
-      [sortBy]: sortOrder,
+      [sortBy]: trimmedSortOrder,
     },
   });
 
-  // Throw an error if no products are found
   if (products.length === 0) {
     throw { name: "ErrorNotFound", message: "Product not found" };
   }
 
-  // Calculate the total number of pages
   const totalPages = Math.ceil(totalProducts / limitInt);
 
-  // Return the products and meta information
   return {
     products,
     meta: {
