@@ -9,11 +9,14 @@ const convertDate = (params) => {
   const isodateString = new Date(myDate).toISOString();
   return isodateString;
 };
+
 const findAll = async (params) => {
-  const {role= "admin", showDeleted = true }=params.role;
-  const { page = 1, limit = 10} = params.req;
+  const { role = "admin", showDeleted = true } = params; // Correct destructuring
+  const { page = 1, limit = 10 } = params.req; // Ensure req is correctly passed
+
   const offset = (page - 1) * Number(limit);
   let whereCondition = {};
+
   if (role === "admin" && showDeleted) {
     whereCondition = {
       OR: [{ deleted_at: null }, { deleted_at: { not: null } }],
@@ -33,9 +36,7 @@ const findAll = async (params) => {
     skip: offset,
     where: whereCondition,
     include: {
-      product_promos: {
-        where: whereCondition,
-      },
+      product_promos: true,
     },
     orderBy: {
       start_date: "asc",
@@ -43,12 +44,16 @@ const findAll = async (params) => {
   });
 
   const totalPages = Math.ceil(totalPromo / limit);
-  const pagination = paginate({result:promo,count:totalPromo,limit:Number(limit),page:Number(page)});
-  // const pagination = paginate()
-  return {
-    pagination
+  const pagination = {
+    promo,
+    totalPromo,
+    totalPages,
+    currentPage: page,
   };
+
+  return pagination;
 };
+
 
 const findOne = async (params) => {
   const { id, role = "admin", showDeleted = true } = params;
