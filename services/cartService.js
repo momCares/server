@@ -74,6 +74,9 @@ const update = async (params) => {
     let affiliate = await prisma.affiliate.findUnique({
       where: { user_id: Number(params.user_id), status: true },
     });
+    if(affiliate){
+      deduction_percent += affiliate.deduction;
+    }
     if (promo_code != null) {
       let promo = await prisma.promo.findUnique({
         where: {
@@ -97,7 +100,7 @@ const update = async (params) => {
         if (promo.quantity == 0) {
           throw { name: "ErrorNotFound", message: "Cant Use this Promo" };
         }
-        deduction_percent = promo.deduction;
+        deduction_percent += promo.deduction;
         promo_id = promo.id;
       }
     }
@@ -180,7 +183,7 @@ const update = async (params) => {
     // deductioncost from total_cost * (affiliate+promo)/100
     // 50% + 10%
     deduction_cost =
-      (total_cost * (affiliate.deduction + deduction_percent)) / 100;
+      (total_cost * ( deduction_percent)) / 100;
     // Calculate net price = total cost + shipping cost -deduction_cost
     net_price = total_cost + shipping_cost - deduction_cost;
     const update_cart = await prisma.cart.update({

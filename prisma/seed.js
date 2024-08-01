@@ -10,6 +10,7 @@ const generateAffiliateCode = (name) => {
 async function main() {
   // Menghapus data lama (optional)
   await prisma.category.deleteMany({});
+  await prisma.province.deleteMany({});
   await prisma.city.deleteMany({});
   await prisma.order.deleteMany({});
   await prisma.affiliate.deleteMany({});
@@ -232,7 +233,9 @@ async function main() {
       name: province.province,
     };
   });
-
+  await prisma.province.createMany({
+    data: provinces,
+  });
   let cities = await axios.get("https://api.rajaongkir.com/starter/city", {
     headers: {
       key: process.env.RAJAONGKIR_SECRET_KEY,

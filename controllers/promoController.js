@@ -3,10 +3,9 @@ const promoService = require("../services/promoService");
 const findAll = async (req, res, next) => {
   try {
     const { role = "user" } = req.user || {};
-
     const params = {
       role,
-      req,
+      ...req.query,
     };
 
     const promo = await promoService.findAll(params);
@@ -35,7 +34,7 @@ const apply = async (req, res, next) => {
     const params = { user_id: req.loggedUser.id, body: req.body };
 
     const promo = await promoService.findOneByCode(params);
-    res.status(200).json({ message: "Promo Applied : ", data: promo });
+    res.status(200).json({ message: "Promo Applied", data: promo });
   } catch (error) {
     next(error);
   }

@@ -9,68 +9,70 @@ const generateAffiliateCode = (name) => {
 };
 
 const register = async (params) => {
-  const { name, email, password, role = "user", affiliate_code = null } = params;
+  await prisma.$transaction(async (prisma) => {
+    // tambah $transaction
+    const { name, email, password, role = "user", affiliate_code = null } = params;
 
-  // Validasi password
-  if (password.length <= 6) {
-    throw { name: "invalidPassword" };
-  }
-  
-  // Hash password
-  const hashedPassword = await hashPassword(password);
-  
-  // Generate affiliate code
-  const affiliateCode = generateAffiliateCode(name);
+    // Validasi password
+    if (password.length <= 6) {
+      throw { name: "invalidPassword" };
+    }
+    
+    // Hash password
+    const hashedPassword = await hashPassword(password);
+    
+    // Generate affiliate code
+    const affiliateCode = generateAffiliateCode(name);
 
-  // Create user
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      cart: {
-        create: {},
-      },
-      affiliate: {
-        create: {
-          code: affiliateCode,
-          deduction: 0,
-          status: true,
-          created_at: new Date(),
-          updated_at: new Date(),
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role,
+        cart: {
+          create: {},
+        },
+        affiliate: {
+          create: {
+            code: affiliateCode,
+            deduction: 0,
+            status: true,
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
         },
       },
-    },
-    include: {
-      affiliate: true,
-      cart: true,
-    },
-  });
-
-  // Validasi affiliate_code jika tidak null
-  if (affiliate_code) {
-    let check_affiliate = await prisma.affiliate.findFirst({
-      where: {
-        code: affiliate_code,
+      include: {
+        affiliate: true,
+        cart: true,
       },
     });
 
-    if (!check_affiliate) {
-      throw { name: "ErrorNotFound", message: "Affiliate code not found" };
-    } else {
-      await prisma.affiliate.update({
+    // Validasi affiliate_code jika tidak null
+    if (affiliate_code) {
+      let check_affiliate = await prisma.affiliate.findFirst({
         where: {
-          id: user.affiliate.id,
-        },
-        data: {
-          deduction: 50,
+          code: affiliate_code,
         },
       });
-    }
-  }
 
-  return user;
+      if (!check_affiliate) {
+        throw { name: "ErrorNotFound", message: "Affiliate code not found" };
+      } else {
+        await prisma.affiliate.update({
+          where: {
+            id: user.affiliate.id,
+          },
+          data: {
+            deduction: 50,
+          },
+        });
+      }
+    }
+    return user;
+  })
 };
 
 const login = async (params) => {
