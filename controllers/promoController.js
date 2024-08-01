@@ -5,7 +5,7 @@ const findAll = async (req, res, next) => {
     const { role = "user" } = req.user || {};
     const params = {
       role,
-      ...req.query,
+      req
     };
 
     const promo = await promoService.findAll(params);
