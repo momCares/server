@@ -17,14 +17,17 @@ const register = async (params) => {
     if (password.length <= 6) {
       throw { name: "invalidPassword" };
     }
-    
+    let deduction =0;
     // Hash password
     const hashedPassword = await hashPassword(password);
     
     // Generate affiliate code
     const affiliateCode = generateAffiliateCode(name);
-
-    // Create user
+    // Validasi affiliate_code jika tidak null
+    if (affiliate_code) {
+      const validate = await validateAffiliate(affiliate_code);      
+      deduction =validate;
+    }
     const user = await prisma.user.create({
       data: {
         name,
@@ -37,7 +40,7 @@ const register = async (params) => {
         affiliate: {
           create: {
             code: affiliateCode,
-            deduction: 0,
+            deduction: deduction,
             status: true,
             created_at: new Date(),
             updated_at: new Date(),
@@ -48,33 +51,23 @@ const register = async (params) => {
         affiliate: true,
         cart: true,
       },
-    });
-
-    // Validasi affiliate_code jika tidak null
-    if (affiliate_code) {
-      let check_affiliate = await prisma.affiliate.findFirst({
-        where: {
-          code: affiliate_code,
-        },
-      });
-
-      if (!check_affiliate) {
-        throw { name: "ErrorNotFound", message: "Affiliate code not found" };
-      } else {
-        await prisma.affiliate.update({
-          where: {
-            id: user.affiliate.id,
-          },
-          data: {
-            deduction: 50,
-          },
-        });
-      }
-    }
+    });  
     return user;
   })
 };
+const validateAffiliate = async(params)=>{
+  let check_affiliate = await prisma.affiliate.findFirst({
+    where: {
+      code: params,
+    },
+  });
 
+  if (!check_affiliate) {
+    throw { name: "ErrorNotFound", message: "Affiliate code not found" };
+  } else {
+    return deduction=50;
+  }
+}
 const login = async (params) => {
   const { email, password } = params;
 
