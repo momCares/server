@@ -216,18 +216,84 @@ const findOrderById = async (orderId) => {
   return order;
 };
 
-const updateOrderStatus = async (orderId, status) => {
+const updateOrderStatus = async (params) => {
   const order = await prisma.order.update({
-    where: { id: orderId },
-    data: { status },
+    where: { id: params.id },
+    data: { status :params.body.status},
+    include:{promo:true}
   });
+  if(params.body.status=='rejected'){
+    await prisma.$transaction(async (prisma) => {
+      let order_details = await prisma.order_Detail.findMany({
+        where: {
+          order_id: Number( params.id),
+        },
+        include: {
+          product: true,
+        },
+      });
+      if (order_details.length > 0) {
+        for (let i = 0; i < order_details.length; i++) {
+          await prisma.product.update({
+            where: { id: order_details[i].product_id },
+            data: {
+              stock: (order_details[i].product.stock+order_details[i].quantity)
+            },
+          });
+        }
+
+      }
+      if(order.promo_id){
+        await prisma.promo.update({
+          where: { id: order.promo_id },
+          data: {
+            quantity: (order.promo.quantity+1)
+          },
+        }); 
+      }
+      const affiliate= prisma.affiliate.findFirst({
+        where:{
+          user_id: Number( order.user_id),
+          deduction:50,
+        }
+      });
+      if(affiliate){
+        // get first order
+        const check_order =await prisma.order.findFirst({
+          where: {
+            user_id: ( order.user_id),
+          },orderBy: {
+            id: "asc",
+          },
+        });
+        if(check_order.id==order.id){
+          await prisma.affiliate.update({
+            where: {user_id: Number( order.user_id)},
+            data: {
+              status: (true)
+            },
+          }); 
+        }
+      }
+    })
+  }
   return order;
 };
 
-const updatePaymentReceipt = async (orderId, paymentReceipt) => {
+const updatePaymentReceipt = async (params) => {
+  const { id, filePath,user_id } = params;
+  const check_order = await prisma.order.findFirst({
+    where: {
+      id: id,
+      user_id: user_id,
+    },
+  })
+  if (!check_order) throw {name: "ErrorNotFound"}
+  if (!filePath) throw {name: "ErrorNotFound"}
+
   const order = await prisma.order.update({
-    where: { id: orderId },
-    data: { paymentReceipt, status: "payment_verified" },
+    where: { id: id },
+    data: { payment_receipt:filePath, status: "processed" },
   });
   return order;
 };
