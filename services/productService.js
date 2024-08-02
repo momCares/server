@@ -66,6 +66,21 @@ const findAll = async (params) => {
     where: whereCondition,
   });
 
+  const totalPages = Math.ceil(totalProducts / limitInt);
+
+  if (pageInt > totalPages) {
+    // Mengembalikan respons kosong jika halaman melebihi total halaman yang ada
+    return {
+      products: [],
+      meta: {
+        totalProducts,
+        totalPages,
+        currentPage: pageInt,
+        pageSize: limitInt,
+      },
+    };
+  }
+
   const products = await prisma.product.findMany({
     take: limitInt,
     skip: offset,
@@ -82,8 +97,6 @@ const findAll = async (params) => {
   if (products.length === 0) {
     throw { name: "ErrorNotFound", message: "Product not found" };
   }
-
-  const totalPages = Math.ceil(totalProducts / limitInt);
 
   return {
     products,
