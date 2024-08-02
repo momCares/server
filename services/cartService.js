@@ -415,7 +415,6 @@ const calculateTotalCost = async ({cart_details, product}) => {
 
   if (cart_details.length > 0) {
     cart_details.forEach(function (row) {
-      console.log(row, "<<<<<")
       calculatedWeight += row.quantity * row.product.weight;
       calculatedCost += row.quantity * row.product.price;
     });
