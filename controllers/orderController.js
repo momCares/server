@@ -59,12 +59,10 @@ const updateStatus = async (req, res, next) => {
 //payment order
 const payment = async (req, res, next) => {
   try {
-    const orderId = parseInt(req.params.id);
-    const { paymentReceipt } = req.body;
+    const params = { id: parseInt(req.params.id),  filePath : req.file.path, user_id:req.loggedUser.id};
+    const order = await orderService.updatePaymentReceipt(params);
 
-    const order = await orderService.updatePaymentReceipt(orderId, paymentReceipt);
-
-    res.status(200).json(order);
+    res.status(200).json("Payment Success");
   } catch (error) {
     next(error); 
   }
