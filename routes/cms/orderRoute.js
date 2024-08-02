@@ -7,7 +7,7 @@ router.post("/", authorization(["admin"]),orderController.create);
 router.get("/", authorization(["admin"]), orderController.findAll);
 router.get("/:id", authorization(["admin"]), orderController.findOne);
 router.put("/:id/status", authorization(["admin"]), orderController.update);
-router.put("/:id/payment-receipt", authorization(["admin"]), orderController.payment);
+// router.put("/:id/payment-receipt", authorization(["admin"]), orderController.payment);
 
 
 

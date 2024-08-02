@@ -37,9 +37,8 @@ const findOne = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   try {
-    const orderId = parseInt(req.params.id);
-    const { status } = req.body;
-    const order = await orderService.updateOrderStatus(orderId, status);
+    const params = {id: parseInt(req.params.id),body: req.body};
+    const order = await orderService.updateOrderStatus(params);
     res.status(200).json(order);
   } catch (error) {
     next(error);
