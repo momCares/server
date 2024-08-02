@@ -11,8 +11,7 @@ const generateAffiliateCode = (name) => {
 const register = async (params) => {
   await prisma.$transaction(async (prisma) => {
     // tambah $transaction
-    const { name, email, password, role = "user", affiliate_code = null } = params;
-
+    const { name, email, password, role = "user", affiliateCode = null } = params;
     // Validasi password
     if (password.length <= 6) {
       throw { name: "invalidPassword" };
@@ -22,10 +21,10 @@ const register = async (params) => {
     const hashedPassword = await hashPassword(password);
     
     // Generate affiliate code
-    const affiliateCode = generateAffiliateCode(name);
+    const affiliate_code = generateAffiliateCode(name);
     // Validasi affiliate_code jika tidak null
-    if (affiliate_code) {
-      const validate = await validateAffiliate(affiliate_code);      
+    if (affiliateCode) {
+      const validate = await validateAffiliate(affiliateCode);      
       deduction =validate;
     }
     const user = await prisma.user.create({
@@ -39,7 +38,7 @@ const register = async (params) => {
         },
         affiliate: {
           create: {
-            code: affiliateCode,
+            code: affiliate_code,
             deduction: deduction,
             status: true,
             created_at: new Date(),
