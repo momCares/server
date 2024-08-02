@@ -54,7 +54,6 @@ const findAll = async (params) => {
   return pagination;
 };
 
-
 const findOne = async (params) => {
   const { id, role = "admin", showDeleted = true } = params;
 
@@ -95,11 +94,11 @@ const findOne = async (params) => {
   return promo;
 };
 const findOneByCode = async (params) => {
-  const {promo_code} = params.body;
+  const { promo_code } = params.body;
   const promo = await prisma.promo.findUnique({
-    where :{
-      code: promo_code
-    }
+    where: {
+      code: promo_code,
+    },
   });
 
   if (!promo) {
@@ -108,11 +107,10 @@ const findOneByCode = async (params) => {
   let cart = await prisma.cart.findUnique({
     where: { user_id: Number(params.user_id) },
   });
-  
-  
+
   const params_promo = {
-    promo:promo,
-    cart_id:cart.id
+    promo: promo,
+    cart_id: cart.id,
   };
 
   const validate = await validatePromo(params_promo);
@@ -122,47 +120,47 @@ const findOneByCode = async (params) => {
     },
     data: {
       promo_id: promo.id,
-      promo_code:promo_code
+      promo_code: promo_code,
     },
   });
   return cart_update;
 };
 // validate promo
-const validatePromo = async(params)=>{
-  const {promo,cart_id} = params;
+const validatePromo = async (params) => {
+  const { promo, cart_id } = params;
 
-  if(promo.start_date!=null && promo.end_date!=null){
-    if(!(promo.start_date<= new Date() && promo.end_date>= new Date())){
-      throw { name: "ErrorNotFound", message:"Promo Expired" };
+  if (promo.start_date != null && promo.end_date != null) {
+    if (!(promo.start_date <= new Date() && promo.end_date >= new Date())) {
+      throw { name: "ErrorNotFound", message: "Promo Expired" };
     }
-  }else if(promo.start_date!=null){
-    if(!(promo.start_date<= new Date())){
-      throw { name: "ErrorNotFound", message:"Cant Use this Promo" };
+  } else if (promo.start_date != null) {
+    if (!(promo.start_date <= new Date())) {
+      throw { name: "ErrorNotFound", message: "Cant Use this Promo" };
     }
   }
-  if(promo.quantity==0){
-    throw { name: "ErrorNotFound", message:"Cant Use this Promo" };
+  if (promo.quantity == 0) {
+    throw { name: "ErrorNotFound", message: "Cant Use this Promo" };
   }
-  if(promo.all_products==false){
+  if (promo.all_products == false) {
     let cart_Details = await prisma.cart_Detail.findMany({
-      where:{cart_id:cart_id}
+      where: { cart_id: cart_id },
     });
     if (cart_Details.length > 0) {
       for (let i = 0; i < cart_Details.length; i++) {
         const check_promo_product = await prisma.product_Promo.findFirst({
           where: {
-            promo_id:promo.id,
-            product_id:cart_Details[i].product_id
-          }
-        })
-        if(!check_promo_product){
-          throw { name: "ErrorNotFound", message:"Cant Use this Promo" };
+            promo_id: promo.id,
+            product_id: cart_Details[i].product_id,
+          },
+        });
+        if (!check_promo_product) {
+          throw { name: "ErrorNotFound", message: "Cant Use this Promo" };
         }
       }
     }
   }
   return true;
-}
+};
 
 const create = async (params) => {
   const {
@@ -181,8 +179,11 @@ const create = async (params) => {
     throw { name: "Unauthorized", message: "Only admin can create a category" };
   }
 
+  // Convert date format
   const startDate = convertDate(start_date);
   const endDate = convertDate(end_date);
+
+  // Create the promo with start_date and end_date
   const promo = await prisma.promo.create({
     data: {
       name,
@@ -190,14 +191,17 @@ const create = async (params) => {
       all_products,
       deduction,
       quantity,
+      start_date: startDate, // Include start_date
+      end_date: endDate, // Include end_date
     },
   });
+
   if (!all_products && products.length > 0) {
     for (const product of products) {
       await prisma.product_Promo.create({
         data: {
           promo_id: promo.id,
-          product_id: product.product_id,
+          product_id: product.value,
         },
       });
     }
@@ -219,11 +223,9 @@ const update = async (params) => {
     role = "admin",
   } = params.body;
 
-
   if (role !== "admin") {
     throw { name: "Unauthorized", message: "Only admin can create a category" };
   }
-
 
   const { id } = params.params;
   const startDate = convertDate(start_date);
@@ -336,4 +338,12 @@ const restore = async (params) => {
   return promo;
 };
 
-module.exports = { findAll, findOne, create, update, restore,findOneByCode, destroy };
+module.exports = {
+  findAll,
+  findOne,
+  create,
+  update,
+  restore,
+  findOneByCode,
+  destroy,
+};
