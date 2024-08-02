@@ -186,7 +186,7 @@ const update = async (params) => {
       where: { user_id: Number(params.user_id) },
       data: {
         shipping_cost: shipping_cost,
-        address_id: address.id,
+        address_id: addres_id,
         total_cost: total_cost,
         promo_code: promo_code != null ? promo_code : null,
         promo_id: promo_id,
