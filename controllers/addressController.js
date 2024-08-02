@@ -3,7 +3,7 @@ const addressService = require("../services/addressService");
 const findAll = async (req, res, next) => {
   const userId = req.loggedUser.id;
   try {
-    const addresses = await addressService.findAll(userId);
+    const addresses = await addressService.findAll({ userId });
     res.json(addresses);
   } catch (error) {
     next(error);
