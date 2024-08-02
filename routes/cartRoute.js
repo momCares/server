@@ -5,6 +5,7 @@ const cartController = require("../controllers/cartController");
 router.get("/", cartController.findOne);
 router.delete("/", cartController.reset);
 router.put("/", cartController.update);
+router.post("/:product_id", cartController.addToCart);
 router.delete("/:product_id", cartController.deleteProduct);
 router.get("/shipping", cartController.getAllShipping);
 

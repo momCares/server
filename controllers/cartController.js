@@ -44,6 +44,27 @@ const getAllShipping = async (req, res, next) =>{
     }
 }
 
-const deleteProduct = async (req, res, next) => {};
+const deleteProduct = async (req, res, next) => {
+    try {
+        const params = {product_id: +req.params.product_id, user_id: req.loggedUser.id}
 
-module.exports = { findOne, reset, update, getAllShipping, deleteProduct };
+        const data = await cartService.deleteProduct(params);
+        res.status(200).json({message: "Success delete from cart"})
+    } catch(err) {
+        next(err);
+    }
+};
+
+const addToCart = async (req, res, next) => {
+
+    try {
+        const params = {product_id: +req.params.product_id, user_id: req.loggedUser.id}
+
+        const data = await cartService.addToCart(params);
+        res.status(200).json({message: "Success add to cart"})
+    } catch(err) {
+        next(err);
+    }
+}
+
+module.exports = { findOne, reset, update, getAllShipping, deleteProduct, addToCart };

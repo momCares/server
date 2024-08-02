@@ -30,7 +30,7 @@ const findOne = async (params) => {
     },
   }); 
   const pagination = paginate({result:cartDetails,count:totalCartDetails,limit:Number(limit),page:Number(page)});
-
+  pagination['cart'] = cart
   return pagination;
 };
 
@@ -62,10 +62,10 @@ const update = async (params) => {
     const {
       product_id,
       quantity,
-      addres_id,
       courier_name,
       shipping_method,
       promo_code,
+      addres_id=null,
     } = params.req.body;
     let promo_id = null;
     let cart = await prisma.cart.findUnique({
@@ -127,7 +127,6 @@ const update = async (params) => {
             product_id: product_id,
             quantity: quantity,
             price: product.price,
-            updated_at: new Date(),
           },
         });
       }
@@ -139,9 +138,7 @@ const update = async (params) => {
           },
           data: {
             quantity: quantity,
-            price: product.price,
-            updated_at: new Date(),
-            created_at: check_cart_product.created_at,
+            price: product.price
           },
         });
       } else {
@@ -158,28 +155,27 @@ const update = async (params) => {
         product: true,
       },
     });
-    if (cart_details.length > 0) {
-      cart_details.forEach(function (row) {
-        total_weight += row.quantity * row.product.weight;
-        total_cost += row.quantity * row.product.price;
-      });
-    }
-    const address = await prisma.address.findUnique({
-      where: {
-        id: addres_id,
-      },
-    });
+  
+    let {calculatedWeight, calculatedCost} = await calculateTotalCost({cart_details, product})
+    total_weight = calculatedWeight
+    total_cost = calculatedCost
+
+    // const address = await prisma.address.findUnique({
+    //   where: {
+    //     id: addres_id,
+    //   },
+    // });
     // for params rajaongkir
-    const shipping_cost_params = {
-      city_id: address.city_id,
-      total_weight,
-      courier_name,
-      shipping_method,
-      store_city_id: 444,
-    };
-    if (total_weight > 0) {
-      shipping_cost = await getShippingCost(shipping_cost_params);
-    }
+    // const shipping_cost_params = {
+    //   city_id: address.city_id,
+    //   total_weight,
+    //   courier_name,
+    //   shipping_method,
+    //   store_city_id: 444,
+    // };
+    // if (total_weight > 0) {
+    //   shipping_cost = await getShippingCost(shipping_cost_params);
+    // }
     // deductioncost from total_cost * (affiliate+promo)/100
     // 50% + 10%
     deduction_cost =
@@ -286,6 +282,147 @@ const getShippingCost = async (params) => {
     }
   }
 };
-const deleteProduct = async (params) => {};
+const deleteProduct = async (params) => {
+  const {product_id, user_id} = params;
 
-module.exports = { findOne, reset, update, deleteProduct };
+  
+  const product = await prisma.product.findUnique({
+    where: {
+      id: product_id
+    }
+  })
+
+
+
+  if (!product) throw {name: "ErrorNotFound"}
+
+  const userCart = await prisma.cart.findUnique({
+    where: {
+      user_id
+    }
+  })
+
+  const cart_detail = await prisma.cart_Detail.findFirst({
+    where: {
+      cart_id: userCart.id,
+      product_id: product.id
+    }
+  })
+
+  if(cart_detail) {
+    return prisma.$transaction(async (tx) => {
+      await tx.cart_Detail.delete({
+        where: {
+         id: cart_detail.id
+        }
+      })
+
+      let cart_details = await tx.cart_Detail.findMany({
+        where: {
+          cart_id: Number(userCart.id),
+        },
+        include: {
+          product: true,
+        },
+      });
+  
+      let { calculatedWeight,calculatedCost } = await calculateTotalCost({cart_details, product})
+  
+      net_price = calculatedCost + userCart.shipping_cost - userCart.deduction_cost;
+      await tx.cart.update({
+        where: { id: userCart.id },
+        data: {
+          total_cost: calculatedCost,
+          net_price: net_price
+        },
+      });
+    })
+  }
+};
+
+const addToCart = async (params) => {
+
+  const {product_id, user_id} = params;
+
+  const product = await prisma.product.findUnique({
+    where: {
+      id: product_id
+    }
+  })
+
+  if (!product) throw {name: "ErrorNotFound"}
+
+  const userCart = await prisma.cart.findUnique({
+    where: {
+      user_id
+    }
+  })
+
+  const cart_detail = await prisma.cart_Detail.findFirst({
+    where: {
+      cart_id: userCart.id,
+      product_id: product.id
+    }
+  })
+
+  if(!cart_detail) {
+    return prisma.$transaction(async (tx) => {
+      await tx.cart_Detail.create({
+        data: {
+          cart_id: userCart.id,
+          product_id: product.id,
+          quantity: 1,
+          price: product.price
+        }
+      })
+
+      
+      let cart_details = await tx.cart_Detail.findMany({
+        where: {
+          cart_id: Number(userCart.id),
+        },
+        include: {
+          product: true,
+        },
+      });
+
+      let { calculatedWeight,calculatedCost } = await calculateTotalCost({cart_details, product})
+  
+      await tx.cart.update({
+        where: { id: userCart.id },
+        data: {
+          total_cost: calculatedCost,
+          net_price: net_price
+        },
+      });
+    })
+  } 
+
+  const newCart = await prisma.cart.findUnique({
+    where: {
+      user_id
+    }
+  })
+
+  return newCart
+
+}
+
+
+const calculateTotalCost = async ({cart_details, product}) => {
+  let calculatedWeight = 0
+  let calculatedCost = 0
+
+  if (cart_details.length > 0) {
+    cart_details.forEach(function (row) {
+      console.log(row, "<<<<<")
+      calculatedWeight += row.quantity * row.product.weight;
+      calculatedCost += row.quantity * row.product.price;
+    });
+  }
+
+  return { calculatedWeight, calculatedCost }
+}
+
+
+module.exports = { findOne, reset, update, deleteProduct, addToCart };
